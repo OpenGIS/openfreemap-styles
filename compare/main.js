@@ -20,8 +20,8 @@ let right
 
 left = await loadStyle('/styles/liberty/style.json')
 
-right = await loadStyle('/styles/outdoors/style.json')
+right = await loadStyle('/styles/outdoor/style.json')
 // Comment to disable
-setupContours(right)
+// setupContours(right)
 
 setupMap(left, right)

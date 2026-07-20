@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * Build the outdoors style from the liberty base.
+ * Build the outdoor style from the liberty base.
  *
- * Reads styles/liberty/style.json, applies all outdoors-specific
+ * Reads styles/liberty/style.json, applies all outdoor-specific
  * modifications (terrain source + hillshade, contour source + layers,
  * mtb:scale overlay, bicycle access overlay, path/track re-styling,
- * path name label colouring), and writes to styles/outdoors/style.json.
+ * path name label colouring), and writes to styles/outdoor/style.json.
  *
  * Contour source uses a placeholder tile URL — maplibre-contour
  * registers a runtime protocol handler and replaces the URL at page
  * load (see compare/main.js for the runtime setup).
  *
  * Usage:
- *   node scripts/build-outdoors.mjs
+ *   node scripts/build-outdoor.mjs
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -24,7 +24,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 
 const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
-const outdoorsPath = resolve(ROOT, 'styles/outdoors/style.json')
+const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 
 // ── Colour palette — all activity/trail colours defined centrally ──
 const COLOURS = {
@@ -281,9 +281,9 @@ if (nameLayer) {
 // Write
 // ════════════════════════════════════════════════════════════════════
 
-writeFileSync(outdoorsPath, `${JSON.stringify(style, null, 2)}\n`, 'utf8')
+writeFileSync(outdoorPath, `${JSON.stringify(style, null, 2)}\n`, 'utf8')
 
-console.log(`✓ outdoors style written to ${outdoorsPath}`)
+console.log(`✓ outdoor style written to ${outdoorPath}`)
 console.log(`  layers: ${style.layers.length} (was ${liberty.layers.length})`)
 console.log(
   `  sources: ${Object.keys(style.sources).length} (was ${Object.keys(liberty.sources).length})`,
