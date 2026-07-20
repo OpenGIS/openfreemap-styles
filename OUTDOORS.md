@@ -1,3 +1,7 @@
+Related to:
+
+https://github.com/hyperknot/openfreemap-styles/issues/8
+
 # Outdoors Style
 
 This is intended as a demonstration of a minimal "activity" (cycling) starting point and by no means exhaustive.
@@ -18,4 +22,4 @@ More details in `scripts/build-outdoors.mjs` comments.
 
 # Contours in Compare
 
-Added `setupContours()` to `compare/main.js` to enable contours lines/labels
+Added `setupContours()` to `compare/map.js` to enable contours lines/labels via new `maplibre-contour` dependency.
