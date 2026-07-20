@@ -26,6 +26,26 @@ const ROOT = resolve(__dirname, '..')
 const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
 const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 
+// ── Colour palette — all activity/trail colours defined centrally ──
+const COLOURS = {
+  // Paths & trails
+  PATH: '#c05a2a',
+
+  // MTB scale difficulty overlay
+  MTB_GRADE_1: 'blue',
+  MTB_GRADE_2: 'red',
+  MTB_GRADE_3_PLUS: 'black',
+
+  // Bicycle access overlay
+  BICYCLE_ACCESS: '#8c64bd',
+
+  // Contour lines & labels
+  CONTOUR_MINOR: 'rgb(126, 124, 121)',
+  CONTOUR_INDEX: 'rgb(124, 122, 121)',
+  CONTOUR_LABEL: '#5c5c5c',
+  CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
+}
+
 // ── 1. Read & deep-clone liberty ──
 const liberty = JSON.parse(readFileSync(libertyPath, 'utf8'))
 const style = JSON.parse(JSON.stringify(liberty))
@@ -34,7 +54,7 @@ const style = JSON.parse(JSON.stringify(liberty))
 // Terrain & hillshade
 // ════════════════════════════════════════════════════════════════════
 
-// ── 2. Terrain source — raster DEM from MapTeron ──
+// ── 2. Terrain source — raster DEM from Mapterhorn ──
 // https://github.com/mapterhorn/mapterhorn
 // Alternative (https://registry.opendata.aws/terrain-tiles/)
 // https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
@@ -86,7 +106,7 @@ style.layers.push(
     minzoom: 10,
     filter: ['==', ['get', 'level'], 0],
     paint: {
-      'line-color': 'rgb(126, 124, 121)',
+      'line-color': COLOURS.CONTOUR_MINOR,
       'line-opacity': 0.25,
       'line-width': 0.5,
     },
@@ -100,7 +120,7 @@ style.layers.push(
     minzoom: 10,
     filter: ['>', ['get', 'level'], 0],
     paint: {
-      'line-color': 'rgb(124, 122, 121)',
+      'line-color': COLOURS.CONTOUR_INDEX,
       'line-opacity': 0.1,
       'line-width': 1.0,
     },
@@ -123,8 +143,8 @@ style.layers.push(
       'text-padding': 0,
     },
     paint: {
-      'text-color': '#5c5c5c',
-      'text-halo-color': 'rgba(255, 255, 255, 0.85)',
+      'text-color': COLOURS.CONTOUR_LABEL,
+      'text-halo-color': COLOURS.CONTOUR_HALO,
       'text-halo-width': 1.25,
     },
   },
@@ -141,7 +161,7 @@ style.layers.push(
 
 // ── 7. MTB scale — trail difficulty overlay ──
 // From: https://github.com/hyperknot/openfreemap/issues/31#issuecomment-4649028862
-// Coloured by mtb:scale value: 1 = blue, 2 = red, everything else = black.
+// Coloured by mtb:scale value (see COLOURS.MTB_GRADE_*)
 // Not exhaustive: mtb:scale:imba is not covered for example.
 //   https://wiki.openstreetmap.org/wiki/Key:mtb:scale
 //   https://wiki.openstreetmap.org/wiki/Key:mtb:scale:imba
@@ -156,7 +176,15 @@ const mtbLayer = {
   filter: ['all', ['==', '$type', 'LineString'], ['!=', 'brunnel', 'tunnel'], ['has', 'mtb_scale']],
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
-    'line-color': ['match', ['get', 'mtb_scale'], '1', 'blue', '2', 'red', 'black'],
+    'line-color': [
+      'match',
+      ['get', 'mtb_scale'],
+      '1',
+      COLOURS.MTB_GRADE_1,
+      '2',
+      COLOURS.MTB_GRADE_2,
+      COLOURS.MTB_GRADE_3_PLUS,
+    ],
     'line-opacity': 0.8,
     'line-width': {
       base: 1.2,
@@ -169,7 +197,7 @@ const mtbLayer = {
 }
 
 // ── 8. Bicycle access — tracks tagged with bicycle=* ──
-// A single bold grey line for any trail tagged with bicycle=*
+// A single bold line (COLOURS.BICYCLE_ACCESS) for any trail tagged with bicycle=*
 // (designated, yes, permissive, etc.). Roads excluded — bicycle tags
 // are common on roads too, but this spotlights trails.
 // Excludes path-class features (already styled by road_path_pedestrian)
@@ -190,7 +218,7 @@ const bicycleLayer = {
     ['in', 'class', 'track'],
   ],
   paint: {
-    'line-color': '#6c6b6a',
+    'line-color': COLOURS.BICYCLE_ACCESS,
     'line-opacity': 0.7,
     'line-width': 2,
   },
@@ -224,7 +252,7 @@ if (pathLayer) {
   pathLayer.minzoom = 0
   pathLayer.maxzoom = 22
   pathLayer.paint = pathLayer.paint || {}
-  pathLayer.paint['line-color'] = '#c05a2a'
+  pathLayer.paint['line-color'] = COLOURS.PATH
   pathLayer.paint['line-opacity'] = ['case', ['has', 'mtb_scale'], 0, 1]
   pathLayer.paint['line-width'] = [
     'interpolate',
@@ -246,7 +274,7 @@ if (nameLayer) {
   nameLayer.minzoom = 0
   nameLayer.maxzoom = 22
   nameLayer.paint = nameLayer.paint || {}
-  nameLayer.paint['text-color'] = '#c05a2a'
+  nameLayer.paint['text-color'] = COLOURS.PATH
 }
 
 // ════════════════════════════════════════════════════════════════════
