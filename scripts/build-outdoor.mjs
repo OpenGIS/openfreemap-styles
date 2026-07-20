@@ -26,7 +26,8 @@ const ROOT = resolve(__dirname, '..')
 const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
 const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 
-// ── Colour palette — all activity/trail colours defined centrally ──
+// ── Setup
+
 const COLOURS = {
   // Paths & trails
   PATH: '#c05a2a',
@@ -45,6 +46,8 @@ const COLOURS = {
   CONTOUR_LABEL: '#5c5c5c',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 }
+
+const WAYMARKED_ACTIVITIES = ['hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes']
 
 // ── 1. Read & deep-clone liberty ──
 const liberty = JSON.parse(readFileSync(libertyPath, 'utf8'))
@@ -151,6 +154,30 @@ style.layers.push(
 )
 
 // ════════════════════════════════════════════════════════════════════
+// Waymarked Trails — hiking/cycling raster overlay
+// ════════════════════════════════════════════════════════════════════
+
+// ── 7. Waymarked Trails — add activity raster tiles ──
+for (const activity of WAYMARKED_ACTIVITIES) {
+  const sourceId = `waymarked-${activity}`
+  style.sources[sourceId] = {
+    type: 'raster',
+    tiles: [`https://tile.waymarkedtrails.org/${activity}/{z}/{x}/{y}.png`],
+    tileSize: 256,
+    attribution: '© waymarkedtrails.org',
+  }
+
+  style.layers.push({
+    id: `${sourceId}-layer`,
+    type: 'raster',
+    source: sourceId,
+    paint: {
+      'raster-opacity': 0.7,
+    },
+  })
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Activity overlays — MTB & bicycle
 // ════════════════════════════════════════════════════════════════════
 // These are inserted BEFORE poi_r20 so they sit above roads but below
@@ -159,7 +186,7 @@ style.layers.push(
 // Activity layers use minzoom 0 / maxzoom 22 so they render at every
 // zoom where the tag data exists in the tile — no artificial gating.
 
-// ── 7. MTB scale — trail difficulty overlay ──
+// ── 8. MTB scale — trail difficulty overlay ──
 // From: https://github.com/hyperknot/openfreemap/issues/31#issuecomment-4649028862
 // Coloured by mtb:scale value (see COLOURS.MTB_GRADE_*)
 // Not exhaustive: mtb:scale:imba is not covered for example.
@@ -196,7 +223,7 @@ const mtbLayer = {
   },
 }
 
-// ── 8. Bicycle access — tracks tagged with bicycle=* ──
+// ── 9. Bicycle access — tracks tagged with bicycle=* ──
 // A single bold line (COLOURS.BICYCLE_ACCESS) for any trail tagged with bicycle=*
 // (designated, yes, permissive, etc.). Roads excluded — bicycle tags
 // are common on roads too, but this spotlights trails.
@@ -236,7 +263,7 @@ if (poiIdx !== -1) {
 // Path & trail styling
 // ════════════════════════════════════════════════════════════════════
 
-// ── 9. Path/track highlighting — modify road_path_pedestrian ──
+// ── 10. Path/track highlighting — modify road_path_pedestrian ──
 // Philosophy: if the tile has trail data, display it. No zoom
 // filtering, no fade-in — loud and proud at all zoom levels.
 //
@@ -267,7 +294,7 @@ if (pathLayer) {
   ]
 }
 
-// ── 10. Path name labels — modify highway-name-path ──
+// ── 11. Path name labels — modify highway-name-path ──
 // Match the path line colour so names read as part of the same feature.
 const nameLayer = style.layers.find(l => l.id === 'highway-name-path')
 if (nameLayer) {

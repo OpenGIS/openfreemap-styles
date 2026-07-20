@@ -29,6 +29,54 @@
         "mlcontour://placeholder/contours/{z}/{x}/{y}.pbf"
       ],
       "maxzoom": 15
+    },
+    "waymarked-hiking": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
+    },
+    "waymarked-cycling": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
+    },
+    "waymarked-mtb": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
+    },
+    "waymarked-skating": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/skating/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
+    },
+    "waymarked-riding": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/riding/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
+    },
+    "waymarked-slopes": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.waymarkedtrails.org/slopes/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "© waymarkedtrails.org"
     }
   },
   "sprite": "https://__TILEJSON_DOMAIN__/sprites/ofm_f384/ofm",
@@ -6255,6 +6303,54 @@
         "text-color": "#5c5c5c",
         "text-halo-color": "rgba(255, 255, 255, 0.85)",
         "text-halo-width": 1.25
+      }
+    },
+    {
+      "id": "waymarked-hiking-layer",
+      "type": "raster",
+      "source": "waymarked-hiking",
+      "paint": {
+        "raster-opacity": 0.7
+      }
+    },
+    {
+      "id": "waymarked-cycling-layer",
+      "type": "raster",
+      "source": "waymarked-cycling",
+      "paint": {
+        "raster-opacity": 0.7
+      }
+    },
+    {
+      "id": "waymarked-mtb-layer",
+      "type": "raster",
+      "source": "waymarked-mtb",
+      "paint": {
+        "raster-opacity": 0.7
+      }
+    },
+    {
+      "id": "waymarked-skating-layer",
+      "type": "raster",
+      "source": "waymarked-skating",
+      "paint": {
+        "raster-opacity": 0.7
+      }
+    },
+    {
+      "id": "waymarked-riding-layer",
+      "type": "raster",
+      "source": "waymarked-riding",
+      "paint": {
+        "raster-opacity": 0.7
+      }
+    },
+    {
+      "id": "waymarked-slopes-layer",
+      "type": "raster",
+      "source": "waymarked-slopes",
+      "paint": {
+        "raster-opacity": 0.7
       }
     }
   ],
