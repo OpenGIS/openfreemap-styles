@@ -49,7 +49,7 @@ let right
 
 left = await loadStyle('/styles/liberty/style.json')
 
-right = await loadStyle('/styles/outdoor/style.json')
+right = await loadStyle('/styles/outdoors/style.json')
 // Comment to disable
 setupContours(right)
 
