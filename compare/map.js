@@ -23,7 +23,13 @@ export function setupMap(leftStyle, rightStyle) {
     // mousemove: true,
   })
 
-  // rightMap.setZoom(leftMap.getZoom())
+  // Sync right map to left map once it's settled (handles hash-driven positioning)
+  leftMap.once('idle', () => {
+    rightMap.jumpTo({
+      center: leftMap.getCenter(),
+      zoom: leftMap.getZoom(),
+    })
+  })
 }
 
 export function setupContours(style) {
