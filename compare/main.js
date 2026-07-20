@@ -4,24 +4,30 @@ import './style.css'
 import { setupMap, setupContours } from './map.js'
 import { loadStyle } from './style.js'
 
-let left
-let right
+import libertyStyleRaw from './styles/liberty/style.json?raw'
+import outdoorStyleRaw from './styles/outdoor/style.json?raw'
 
-// left = await loadStyle('/styles/fiord/style.json')
+//
+;(async () => {
+  let left
+  let right
 
-// right = await loadStyle('/styles/positron/style.json')
-// right = await loadStyle('/styles/dark/style.json')
+  // left = await loadStyle('/styles/fiord/style.json')
 
-// right = await loadStyle('/styles/positron/style.json')
-// right = await loadStyle('/styles/positron/omt_orig_linted.json')
+  // right = await loadStyle('/styles/positron/style.json')
+  // right = await loadStyle('/styles/dark/style.json')
 
-// right = await loadStyle('/styles/dark/style.json')
-// right = await loadStyle('/dark/omt_orig_linted.json')
+  // right = await loadStyle('/styles/positron/style.json')
+  // right = await loadStyle('/styles/positron/omt_orig_linted.json')
 
-left = await loadStyle('/styles/liberty/style.json')
+  // right = await loadStyle('/styles/dark/style.json')
+  // right = await loadStyle('/dark/omt_orig_linted.json')
 
-right = await loadStyle('/styles/outdoor/style.json')
-// Comment to disable
-// setupContours(right)
+  left = loadStyle(libertyStyleRaw)
 
-setupMap(left, right)
+  right = loadStyle(outdoorStyleRaw)
+  // Comment to disable
+  setupContours(right)
+
+  setupMap(left, right)
+})()
