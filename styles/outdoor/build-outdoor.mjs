@@ -3,8 +3,9 @@
 /**
  * Build the outdoor style from the liberty base.
  *
- * Reads styles/liberty/style.json, applies all outdoor-specific
- * modifications, and writes to styles/outdoor/style.json.
+ * Reads styles/liberty/style.json (relative to the monorepo root),
+ * applies all outdoor-specific modifications, and writes to style.json
+ * in the same directory as this script.
  *
  * Feature flags at the top enable/disable each section. Data source
  * URLs are constants that can be swapped to change providers without
@@ -14,7 +15,7 @@
  *   terrain → contours → waymarked trails → mtb/bicycle → path styling
  *
  * Usage:
- *   node scripts/build-outdoor.mjs
+ *   node build-outdoor.mjs
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -22,10 +23,9 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(__dirname, '..')
 
-const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
-const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
+const libertyPath = resolve(__dirname, '../../styles/liberty/style.json')
+const outdoorPath = resolve(__dirname, 'style.json')
 
 // ═════════════════════════════════════════════════════════════════════════
 // Feature toggles
@@ -69,8 +69,9 @@ const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
 // source-layer 'contours' with 'ele' and 'level' fields.
 //
 // TrailSplits API (fallback):
-//   https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf
-const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_URL_PBF =
+  'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
+// const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
 const CONTOUR_SOURCE_PBF_MAXZOOM = 14
 
 // ═════════════════════════════════════════════════════════════════════════

@@ -54,7 +54,7 @@ To use AWS Terrarium instead (256px PNG tiles, slightly faster but less detail),
 
 ## Usage in style
 
-The outdoor build script (`scripts/build-outdoor.mjs`) points at the local server:
+The outdoor build script (`../build-outdoor.mjs`) points at the local server:
 
 ```
 http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf

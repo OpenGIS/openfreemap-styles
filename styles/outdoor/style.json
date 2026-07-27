@@ -17,7 +17,7 @@
       "type": "vector",
       "minzoom": 10,
       "tiles": [
-        "http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf"
+        "https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf"
       ],
       "maxzoom": 14
     }

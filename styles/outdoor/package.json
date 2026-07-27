@@ -1,0 +1,20 @@
+{
+  "name": "openfreemap-outdoor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "style": "node build-outdoor.mjs"
+  },
+  "dependencies": {
+    "maplibre-contour": "^0.1.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.0",
+    "vite": "^6.0.7"
+  }
+}
