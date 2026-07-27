@@ -17,9 +17,9 @@
       "type": "vector",
       "minzoom": 10,
       "tiles": [
-        "https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf"
+        "http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf"
       ],
-      "maxzoom": 12
+      "maxzoom": 14
     }
   },
   "sprite": "https://__TILEJSON_DOMAIN__/sprites/ofm_f384/ofm",

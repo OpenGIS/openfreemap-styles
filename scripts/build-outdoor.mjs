@@ -63,13 +63,15 @@ const CONTOUR_SOURCE_URL_PLUGIN = 'mlcontour://placeholder/contours/{z}/{x}/{y}.
 const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
 
 // ── PBF contours (direct vector tiles, no plugin) ────────────────────
-// Pre-generated PBF contour tiles from the TrailSplits API. 20 m
-// interval, source-layer 'contours' with 'ele' field (elevation in m).
-// No maplibre-contour plugin needed.
+// Self-hosted contour-mvt-server (styles/outdoor/contours/). Runs
+// on-demand from AWS Terrarium DEM tiles. 20 m minor / 100 m major
+// intervals at z10-12, increasing detail at higher zooms.
+// source-layer 'contours' with 'ele' and 'level' fields.
+//
+// TrailSplits API (fallback):
 //   https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf
-const CONTOUR_SOURCE_URL_PBF =
-  'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_PBF_MAXZOOM = 12
+const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_PBF_MAXZOOM = 14
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours

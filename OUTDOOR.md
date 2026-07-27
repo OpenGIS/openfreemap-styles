@@ -39,6 +39,9 @@ I updated the build script with countour line/label definitions. Same raster DEM
 
 Looks great, **BUT** this requires the `maplibre-contour` plugin at runtime, so cannot be defined purely in the style.
 
+https://trailsplits.com/api#contours
+https://github.com/tracestrack/pmtiles-contour-server
+
 # 3. Waymarked Trails
 
 [![Click to view example](https://www.ogis.org/examples/outdoor/style-contours-waymarked/screenshot.png)](https://www.ogis.org/examples/outdoor/style-contours-waymarked/#12.95/45.81932/11.74289)
@@ -53,8 +56,4 @@ In this example, the required relation-level tags (e.g. [ref=190, network=lwn](h
 
 Taking this further, I decided to all ALL activity layers available through waymarkedtrails ('hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes')... because why not?!
 
-# 4.
-
-Because deviating
-
-https://github.com/hyperknot/openfreemap/issues/93
+# 4. TrailSplits

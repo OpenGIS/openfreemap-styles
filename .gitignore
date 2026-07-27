@@ -4,3 +4,4 @@ node_modules
 /temp
 
 _collected
+.DS_Store
