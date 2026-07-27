@@ -7,10 +7,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const MONOREPO_ROOT = resolve(__dirname, '../..')
 
 export default defineConfig({
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {
       '/styles': resolve(MONOREPO_ROOT, 'styles'),
+      events: resolve(__dirname, 'node_modules/events/events.js'),
     },
   },
   server: {
@@ -18,5 +20,8 @@ export default defineConfig({
     fs: {
       allow: [MONOREPO_ROOT],
     },
+  },
+  optimizeDeps: {
+    include: ['events'],
   },
 })

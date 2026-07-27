@@ -4,12 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/build.mjs && vite",
+    "dev": "node scripts/build.mjs --watch & vite; kill %1 2>/dev/null || true",
+    "build": "node scripts/build.mjs",
+    "build:watch": "node scripts/build.mjs --watch",
     "demo:build": "vite build",
     "demo:preview": "vite preview"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-compare": "^0.5.0",
+    "events": "^3.3.0",
     "maplibre-contour": "^0.1.0",
     "maplibre-gl": "^5.0.0",
     "vue": "^3.5.0"

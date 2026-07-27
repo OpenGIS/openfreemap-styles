@@ -13,19 +13,17 @@ Opens the compare app at [localhost:11000](http://localhost:11000) — Liberty o
 
 ## Scripts
 
-| Command                | Description                                         |
-| ---------------------- | --------------------------------------------------- |
-| `npm run dev`          | Build style + start Vite dev server on port 11000   |
-| `npm run demo:build`   | Build the compare app for production (`vite build`) |
-| `npm run demo:preview` | Preview the production build (`vite preview`)       |
-
-The style build script lives inside this sub-project — `scripts/build.mjs` (run via `pnpm run build` or `pnpm run build:watch` from root).
-
-## How it works
+| Command                | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| `npm run dev`          | Build & watch style + start Vite dev server on port 11000  |
+| `npm run build`        | One-shot build `style.json` from `build.mjs` feature flags |
+| `npm run build:watch`  | Watch `build.mjs` and liberty base — rebuild on changes    |
+| `npm run demo:build`   | Build the compare app for production (`vite build`)        |
+| `npm run demo:preview` | Preview the production build (`vite preview`)              |
 
 The build script (`scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, and waymarked trail overlays.
 
-Running `npm run dev` first invokes the build script, then starts the Vite dev server.
+Running `npm run dev` runs the build in watch mode (background) alongside the Vite dev server. Editing `build.mjs` feature flags or the liberty base automatically rebuilds `style.json` — Vite detects the change and hot-reloads the compare app.
 
 ## Contours
 
