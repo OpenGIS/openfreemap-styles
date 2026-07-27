@@ -21,6 +21,9 @@ export default defineConfig({
       allow: [MONOREPO_ROOT],
     },
   },
+  build: {
+    outDir: 'demo',
+  },
   optimizeDeps: {
     include: ['events'],
   },
