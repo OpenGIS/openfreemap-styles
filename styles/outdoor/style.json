@@ -13,15 +13,6 @@
       "type": "vector",
       "url": "https://__TILEJSON_DOMAIN__/planet"
     },
-    "terrainSource": {
-      "type": "raster-dem",
-      "tiles": [
-        "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"
-      ],
-      "encoding": "terrarium",
-      "tileSize": 512,
-      "maxzoom": 15
-    },
     "contour-source": {
       "type": "vector",
       "minzoom": 10,
@@ -6052,14 +6043,6 @@
       }
     },
     {
-      "id": "hillshade-layer",
-      "type": "hillshade",
-      "source": "terrainSource",
-      "paint": {
-        "hillshade-exaggeration": 0.2
-      }
-    },
-    {
       "id": "contour-lines",
       "type": "line",
       "source": "contour-source",
@@ -6153,9 +6136,5 @@
         "text-halo-width": 1.25
       }
     }
-  ],
-  "terrain": {
-    "source": "terrainSource",
-    "exaggeration": 1.5
-  }
+  ]
 }

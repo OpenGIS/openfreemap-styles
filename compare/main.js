@@ -27,7 +27,7 @@ import outdoorStyleRaw from './styles/outdoor/style.json?raw'
 
   right = loadStyle(outdoorStyleRaw)
   // Comment to disable
-  setupContours(right)
+  // setupContours(right)
 
   setupMap(left, right)
 })()

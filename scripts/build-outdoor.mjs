@@ -4,13 +4,14 @@
  * Build the outdoor style from the liberty base.
  *
  * Reads styles/liberty/style.json, applies all outdoor-specific
- * modifications (terrain source + hillshade, contour source + layers,
- * mtb:scale overlay, bicycle access overlay, path/track re-styling,
- * path name label colouring), and writes to styles/outdoor/style.json.
+ * modifications, and writes to styles/outdoor/style.json.
  *
- * Contour source uses a placeholder tile URL — maplibre-contour
- * registers a runtime protocol handler and replaces the URL at page
- * load (see compare/main.js for the runtime setup).
+ * Feature flags at the top enable/disable each section. Data source
+ * URLs are constants that can be swapped to change providers without
+ * changing any section logic — see the commented alternatives.
+ *
+ * Sections are ordered from bottom to top in the render stack:
+ *   terrain → contours → waymarked trails → mtb/bicycle → path styling
  *
  * Usage:
  *   node scripts/build-outdoor.mjs
@@ -26,10 +27,46 @@ const ROOT = resolve(__dirname, '..')
 const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
 const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 
-// ── Setup
+// ═════════════════════════════════════════════════════════════════════════
+// Feature toggles
+// ═════════════════════════════════════════════════════════════════════════
+// Flip these to enable/disable each feature section.
 
-const ACTIVITY = false
-const CONTOURS = true
+const TERRAIN = false // 3D terrain hillshading (raster DEM)
+const CONTOURS = false // Vector contour lines (via maplibre-contour)
+const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
+const MTB_SCALE = false // MTB difficulty + bicycle access overlays
+const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
+
+// ═════════════════════════════════════════════════════════════════════════
+// Data source URLs
+// ═════════════════════════════════════════════════════════════════════════
+// Change a URL constant to swap providers — no section code changes needed.
+
+// ── Terrain DEM (raster-elevation) ───────────────────────────────────
+// Mapterhorn (Terrarium, 512px, maxzoom 15):
+//   https://tiles.mapterhorn.com/{z}/{x}/{y}.webp
+// AWS Terrarium (Terrarium, 256px, maxzoom 15):
+//   https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
+// TrailSplits TerrainRGB (Mapbox, 256px, maxzoom 12):
+//   https://api.trailsplits.com/tiles/v1/terrainrgb/current/{z}/{x}/{y}.png
+const TERRAIN_SOURCE_URL = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'
+const TERRAIN_SOURCE_ENCODING = 'terrarium'
+const TERRAIN_SOURCE_TILESIZE = 512
+const TERRAIN_SOURCE_MAXZOOM = 15
+
+// ── Vector contours (maplibre-contour plugin) ────────────────────────
+// Uses the mlcontour:// protocol handler at runtime. The plugin generates
+// contour tiles client-side from the DEM.
+//   https://github.com/onthegomap/maplibre-contour
+// For direct PBF contour tiles (no runtime plugin), substitute:
+//   https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf
+const CONTOUR_SOURCE_URL = 'mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_MAXZOOM = 15
+
+// ═════════════════════════════════════════════════════════════════════════
+// Colours
+// ═════════════════════════════════════════════════════════════════════════
 
 const COLOURS = {
   // Paths & trails
@@ -50,62 +87,58 @@ const COLOURS = {
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 }
 
-// const WAYMARKED_ACTIVITIES = ['hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes']
-const WAYMARKED_ACTIVITIES = []
+// ═════════════════════════════════════════════════════════════════════════
+// Setup — read & deep-clone the base style
+// ═════════════════════════════════════════════════════════════════════════
 
-// ── 1. Read & deep-clone liberty ──
 const liberty = JSON.parse(readFileSync(libertyPath, 'utf8'))
 const style = JSON.parse(JSON.stringify(liberty))
 
-// ════════════════════════════════════════════════════════════════════
-// Terrain & hillshade
-// ════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════
+// 1. Terrain & hillshade  — bottom of render stack
+// ═════════════════════════════════════════════════════════════════════════
+// Sets a raster-dem source, enables 3D terrain, and appends a hillshade
+// layer that shades the terrain surface across all other layers.
 
-// ── 2. Terrain source — raster DEM from Mapterhorn ──
-// https://github.com/mapterhorn/mapterhorn
-// Alternative (https://registry.opendata.aws/terrain-tiles/)
-// https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png
-style.sources.terrainSource = {
-  type: 'raster-dem',
-  tiles: ['https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'],
-  encoding: 'terrarium',
-  tileSize: 512,
-  maxzoom: 15,
+if (TERRAIN) {
+  style.sources.terrainSource = {
+    type: 'raster-dem',
+    tiles: [TERRAIN_SOURCE_URL],
+    encoding: TERRAIN_SOURCE_ENCODING,
+    tileSize: TERRAIN_SOURCE_TILESIZE,
+    maxzoom: TERRAIN_SOURCE_MAXZOOM,
+  }
+
+  style.terrain = { source: 'terrainSource', exaggeration: 1.5 }
+
+  style.layers.push({
+    id: 'hillshade-layer',
+    type: 'hillshade',
+    source: 'terrainSource',
+    paint: { 'hillshade-exaggeration': 0.2 },
+  })
 }
 
-// ── 3. Terrain exaggeration — subtle 3D bump ──
-style.terrain = { source: 'terrainSource', exaggeration: 1.5 }
-
-// ── 4. Hillshade layer (appended; draws on top of all 2D layers) ──
-style.layers.push({
-  id: 'hillshade-layer',
-  type: 'hillshade',
-  source: 'terrainSource',
-  paint: { 'hillshade-exaggeration': 0.2 },
-})
-
-// ════════════════════════════════════════════════════════════════════
-// Contours — source + layers (placeholder URL; replaced at runtime)
-// ════════════════════════════════════════════════════════════════════
-
+// ═════════════════════════════════════════════════════════════════════════
+// 2. Contours  — above hillshade, below other overlays
+// ═════════════════════════════════════════════════════════════════════════
+// Uses the maplibre-contour JS plugin to generate vector contour tiles
+// at runtime from the DEM. The mlcontour:// protocol handler replaces
+// placeholder URLs on-the-fly.
+//
+// This requires demSource.setupMaplibre() and
+// demSource.contourProtocolUrl() at page load (see compare/main.js).
 // https://github.com/onthegomap/maplibre-contour
-// At runtime maplibre-contour registers the mlcontour:// protocol and
-// generates tile URLs on-the-fly from DEM data. The URL is replaced
-// at runtime after demSource.setupMaplibre() and
-// demSource.contourProtocolUrl() are called.
 
 if (CONTOURS) {
-  // ── 5. Contour source (vector tiles from DEM via maplibre-contour) ──
   style.sources['contour-source'] = {
     type: 'vector',
     minzoom: 10,
-    tiles: ['mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'],
-    maxzoom: 15,
+    tiles: [CONTOUR_SOURCE_URL],
+    maxzoom: CONTOUR_SOURCE_MAXZOOM,
   }
 
-  // ── 6. Contour layers (appended after hillshade) ──
   style.layers.push(
-    // Minor contour lines (index 0 = normal interval)
     {
       id: 'contour-lines',
       type: 'line',
@@ -119,7 +152,6 @@ if (CONTOURS) {
         'line-width': 0.5,
       },
     },
-    // Index contour lines (thicker, every 5th)
     {
       id: 'contour-lines-index',
       type: 'line',
@@ -133,7 +165,6 @@ if (CONTOURS) {
         'line-width': 1.0,
       },
     },
-    // Contour elevation labels on index lines
     {
       id: 'contour-labels',
       type: 'symbol',
@@ -159,11 +190,12 @@ if (CONTOURS) {
   )
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Waymarked Trails — hiking/cycling raster overlay
-// ════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════
+// 3. Waymarked Trails  — raster overlay above contours
+// ═════════════════════════════════════════════════════════════════════════
+// Adds a raster tile source + layer per activity in the array.
+// https://waymarkedtrails.org
 
-// ── 7. Waymarked Trails — add activity raster tiles ──
 for (const activity of WAYMARKED_ACTIVITIES) {
   const sourceId = `waymarked-${activity}`
   style.sources[sourceId] = {
@@ -172,34 +204,23 @@ for (const activity of WAYMARKED_ACTIVITIES) {
     tileSize: 256,
     attribution: '© waymarkedtrails.org',
   }
-
   style.layers.push({
     id: `${sourceId}-layer`,
     type: 'raster',
     source: sourceId,
-    paint: {
-      'raster-opacity': 0.7,
-    },
+    paint: { 'raster-opacity': 0.7 },
   })
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Activity overlays — MTB & bicycle
-// ════════════════════════════════════════════════════════════════════
-// These are inserted BEFORE poi_r20 so they sit above roads but below
-// POI labels.
+// ═════════════════════════════════════════════════════════════════════════
+// 4. Activity overlays  — MTB & bicycle (inserted before poi_r20)
+// ═════════════════════════════════════════════════════════════════════════
+// These sit above roads but below POI labels.
 
-// Activity layers use minzoom 0 / maxzoom 22 so they render at every
-// zoom where the tag data exists in the tile — no artificial gating.
-
-// ── 8. MTB scale — trail difficulty overlay ──
-// From: https://github.com/hyperknot/openfreemap/issues/31#issuecomment-4649028862
-// Coloured by mtb:scale value (see COLOURS.MTB_GRADE_*)
-// Not exhaustive: mtb:scale:imba is not covered for example.
-//   https://wiki.openstreetmap.org/wiki/Key:mtb:scale
-//   https://wiki.openstreetmap.org/wiki/Key:mtb:scale:imba
-
-if (ACTIVITY) {
+if (MTB_SCALE) {
+  // ── MTB scale — trail difficulty colour overlay ──
+  // https://github.com/hyperknot/openfreemap/issues/31
+  // https://wiki.openstreetmap.org/wiki/Key:mtb:scale
   const mtbLayer = {
     id: 'mtb_scale-casing',
     type: 'line',
@@ -236,13 +257,7 @@ if (ACTIVITY) {
     },
   }
 
-  // ── 9. Bicycle access — tracks tagged with bicycle=* ──
-  // A single bold line (COLOURS.BICYCLE_ACCESS) for any trail tagged with bicycle=*
-  // (designated, yes, permissive, etc.). Roads excluded — bicycle tags
-  // are common on roads too, but this spotlights trails.
-  // Excludes path-class features (already styled by road_path_pedestrian)
-  // so only tracks get the overlay.
-  //   https://wiki.openstreetmap.org/wiki/Key:bicycle
+  // ── Bicycle access — tracks tagged with bicycle=* ──
   const bicycleLayer = {
     id: 'bicycle-access',
     type: 'line',
@@ -264,7 +279,6 @@ if (ACTIVITY) {
     },
   }
 
-  // Insert before poi_r20
   const poiIdx = style.layers.findIndex(l => l.id === 'poi_r20')
   if (poiIdx !== -1) {
     style.layers.splice(poiIdx, 0, bicycleLayer, mtbLayer)
@@ -273,56 +287,49 @@ if (ACTIVITY) {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Path & trail styling
-// ════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════
+// 5. Path & trail styling  — modifies existing layers in-place
+// ═════════════════════════════════════════════════════════════════════════
+// Raises path visibility across all zoom levels and recolours them to
+// the PATH colour.
 
-// ── 10. Path/track highlighting — modify road_path_pedestrian ──
-// Philosophy: if the tile has trail data, display it. No zoom
-// filtering, no fade-in — loud and proud at all zoom levels.
-//
-// OpenMapTiles includes path data in tiles from z12 (route members),
-// z13 (named/routed/sac_scale), and z14+ (all paths).
-//   https://github.com/openmaptiles/openmaptiles/pull/1190
-//   https://github.com/openmaptiles/openmaptiles/pull/1334
-//
-// MTB-scale trails get opacity 0 (they're drawn by the dedicated MTB
-// layer above), so paths and mtb:scale trails don't double-up.
-const pathLayer = style.layers.find(l => l.id === 'road_path_pedestrian')
-if (pathLayer) {
-  pathLayer.minzoom = 0
-  pathLayer.maxzoom = 22
-  pathLayer.paint = pathLayer.paint || {}
-  pathLayer.paint['line-color'] = COLOURS.PATH
-  if (ACTIVITY) {
-    pathLayer.paint['line-opacity'] = ['case', ['has', 'mtb_scale'], 0, 1]
+if (PROMOTE_PATHS) {
+  // ── road_path_pedestrian ──
+  const pathLayer = style.layers.find(l => l.id === 'road_path_pedestrian')
+  if (pathLayer) {
+    pathLayer.minzoom = 0
+    pathLayer.maxzoom = 22
+    pathLayer.paint = pathLayer.paint || {}
+    pathLayer.paint['line-color'] = COLOURS.PATH
+    if (MTB_SCALE) {
+      pathLayer.paint['line-opacity'] = ['case', ['has', 'mtb_scale'], 0, 1]
+    }
+    pathLayer.paint['line-width'] = [
+      'interpolate',
+      ['exponential', 1.2],
+      ['zoom'],
+      12,
+      1,
+      14,
+      2,
+      20,
+      8,
+    ]
   }
-  pathLayer.paint['line-width'] = [
-    'interpolate',
-    ['exponential', 1.2],
-    ['zoom'],
-    12,
-    1,
-    14,
-    2,
-    20,
-    8,
-  ]
+
+  // ── highway-name-path ──
+  const nameLayer = style.layers.find(l => l.id === 'highway-name-path')
+  if (nameLayer) {
+    nameLayer.minzoom = 0
+    nameLayer.maxzoom = 22
+    nameLayer.paint = nameLayer.paint || {}
+    nameLayer.paint['text-color'] = COLOURS.PATH
+  }
 }
 
-// ── 11. Path name labels — modify highway-name-path ──
-// Match the path line colour so names read as part of the same feature.
-const nameLayer = style.layers.find(l => l.id === 'highway-name-path')
-if (nameLayer) {
-  nameLayer.minzoom = 0
-  nameLayer.maxzoom = 22
-  nameLayer.paint = nameLayer.paint || {}
-  nameLayer.paint['text-color'] = COLOURS.PATH
-}
-
-// ════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════
 // Write
-// ════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════
 
 writeFileSync(outdoorPath, `${JSON.stringify(style, null, 2)}\n`, 'utf8')
 
