@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { loadStyle } from './style.js'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import MaplibreCompare from '@maplibre/maplibre-gl-compare'
+import '@maplibre/maplibre-gl-compare/dist/maplibre-gl-compare.css'
 
 import libertyStyleRaw from '/styles/liberty/style.json?raw'
 import outdoorStyleRaw from '../style.json?raw'
@@ -29,7 +33,7 @@ onMounted(async () => {
     zoom: 3,
   })
 
-  new maplibregl.Compare(leftMap, rightMap, compareEl.value, {})
+  new MaplibreCompare(leftMap, rightMap, compareEl.value, {})
 
   leftMap.once('idle', () => {
     rightMap.jumpTo({
