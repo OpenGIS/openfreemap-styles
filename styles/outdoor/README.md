@@ -9,21 +9,21 @@ npm install
 npm run dev
 ```
 
-Opens the compare app at [localhost:11000](http://localhost:11000) — Liberty on the left, Outdoor on the right. The build runs automatically before the dev server starts; editing `style.json` triggers Vite HMR.
+Opens the compare app at [localhost:11000](http://localhost:11000) — Liberty on the left, Outdoor on the right. Edit `style.json` directly for quick style tweaks — Vite HMR updates instantly. Change feature flags in `scripts/build.mjs` and the watcher automatically rebuilds `style.json` and triggers HMR — no manual build step needed.
 
 ## Scripts
 
 | Command                | Description                                                |
 | ---------------------- | ---------------------------------------------------------- |
-| `npm run dev`          | Build & watch style + start Vite dev server on port 11000  |
-| `npm run build`        | One-shot build `style.json` from `build.mjs` feature flags |
-| `npm run build:watch`  | Watch `build.mjs` and liberty base — rebuild on changes    |
-| `npm run demo:build`   | Build the compare app demo to `demo/` (`vite build`)       |
-| `npm run demo:preview` | Preview the production build (`vite preview`)              |
+| `npm run dev`          | Vite dev server + file watcher. HMR on `style.json` change; auto-rebuild on `build.mjs` / `liberty/style.json` changes  |
+| `npm run build`        | One-shot build `style.json` from `build.mjs` feature flags  |
+| `npm run watch:build`  | Standalone file watcher (for separate terminal)              |
+| `npm run demo:build`   | Build the compare app demo to `demo/` (`vite build`)        |
+| `npm run demo:preview` | Preview the production build (`vite preview`)               |
 
 The build script (`scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, and waymarked trail overlays.
 
-Running `npm run dev` runs the build in watch mode (background) alongside the Vite dev server. Editing `build.mjs` feature flags or the liberty base automatically rebuilds `style.json` — Vite detects the change and hot-reloads the compare app.
+Running `npm run dev` starts Vite (HMR on `style.json`) alongside `scripts/watch.mjs`, which watches `scripts/build.mjs` and `styles/liberty/style.json`. When either changes — e.g. you flip a feature flag — it runs the build automatically, and Vite pushes the updated `style.json` to the browser. No manual build step, no extra terminal tab.
 
 ## Contours
 
@@ -60,5 +60,6 @@ styles/outdoor/
 └── package.json
 
 scripts/
-└── build.mjs            # Style build script
+├── build.mjs            # Style build script
+└── watch.mjs            # File watcher (auto-rebuild on change)
 ```

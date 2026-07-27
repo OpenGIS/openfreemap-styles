@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/build.mjs --watch & vite; kill %1 2>/dev/null || true",
+    "dev": "concurrently --names dev,build --prefix-colors cyan,green \"vite\" \"node scripts/watch.mjs\"",
     "build": "node scripts/build.mjs",
-    "build:watch": "node scripts/build.mjs --watch",
+    "watch:build": "node scripts/watch.mjs",
     "demo:build": "vite build",
     "demo:preview": "vite preview"
   },
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.0",
+    "concurrently": "^10.0.4",
     "vite": "^6.0.7"
   }
 }

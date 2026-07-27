@@ -15,11 +15,10 @@
  *   terrain → contours → waymarked trails → mtb/bicycle → path styling
  *
  * Usage:
- *   node styles/outdoor/scripts/build.mjs          # one-shot build
- *   node styles/outdoor/scripts/build.mjs --watch  # rebuild on changes
+ *   node scripts/build.mjs           # one-shot build
  */
 
-import { readFileSync, writeFileSync, watch } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -34,7 +33,7 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // ═════════════════════════════════════════════════════════════════════════
 // Flip these to enable/disable each feature section.
 
-const TERRAIN = false // 3D terrain hillshading (raster DEM)
+const TERRAIN = true // 3D terrain hillshading (raster DEM)
 const CONTOURS = 'pbf' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
@@ -70,10 +69,11 @@ const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
 // intervals at z10-12, increasing detail at higher zooms.
 // source-layer 'contours' with 'ele' and 'level' fields.
 //
-// TrailSplits API (fallback):
-const CONTOUR_SOURCE_URL_PBF =
-  'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
-// const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+// Local contour-mvt-server (self-hosted):
+const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+// TrailSplits API (fallback, only serves up to z12):
+// const CONTOUR_SOURCE_URL_PBF =
+//   'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
 const CONTOUR_SOURCE_PBF_MAXZOOM = 14
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -149,7 +149,7 @@ function build() {
 
     style.sources['contour-source'] = {
       type: 'vector',
-      minzoom: 10,
+      minzoom: 12,
       tiles: [url],
       maxzoom,
     }
@@ -160,12 +160,13 @@ function build() {
         type: 'line',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 10,
+        minzoom: 12,
+        maxzoom: 14,
         filter: minor,
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
-          'line-opacity': 0.25,
-          'line-width': 0.5,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.25, 14, 0.35],
+          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0],
         },
       },
       {
@@ -173,12 +174,13 @@ function build() {
         type: 'line',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 10,
+        minzoom: 12,
+        maxzoom: 14,
         filter: index,
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
-          'line-opacity': 0.1,
-          'line-width': 1.0,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.1, 14, 0.2],
+          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.0, 14, 1.5],
         },
       },
       {
@@ -186,13 +188,14 @@ function build() {
         type: 'symbol',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 11,
+        minzoom: 12,
+        maxzoom: 14,
         filter: index,
         layout: {
           'symbol-placement': 'line',
           'symbol-avoid-edges': true,
           'text-rotation-alignment': 'map',
-          'text-size': ['interpolate', ['linear'], ['zoom'], 11, 6, 18, 10],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 7, 14, 10],
           'text-field': ['concat', ['number-format', ['get', 'ele'], {}], 'm'],
           'text-font': ['Noto Sans Regular'],
           'text-padding': 0,
@@ -342,32 +345,7 @@ function build() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════
-// CLI — build once, or watch for changes
+// CLI — one-shot build
 // ═════════════════════════════════════════════════════════════════════════
 
-const WATCH_FILES = [
-  { path: new URL(import.meta.url).pathname, label: 'build script' },
-  { path: libertyPath, label: 'liberty base' },
-]
-
-if (process.argv.includes('--watch')) {
-  build()
-
-  const debounced = new Set()
-
-  for (const { path, label } of WATCH_FILES) {
-    watch(path, () => {
-      if (debounced.has(path)) return
-      debounced.add(path)
-      setTimeout(() => {
-        debounced.delete(path)
-        console.log(`\n  changed: ${label}`)
-        build()
-      }, 300)
-    })
-  }
-
-  console.log('\nwatching for changes...')
-} else {
-  build()
-}
+build()
