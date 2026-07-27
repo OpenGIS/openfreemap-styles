@@ -17,9 +17,9 @@
       "type": "vector",
       "minzoom": 10,
       "tiles": [
-        "mlcontour://placeholder/contours/{z}/{x}/{y}.pbf"
+        "https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf"
       ],
-      "maxzoom": 15
+      "maxzoom": 12
     }
   },
   "sprite": "https://__TILEJSON_DOMAIN__/sprites/ofm_f384/ofm",
@@ -6049,10 +6049,14 @@
       "source-layer": "contours",
       "minzoom": 10,
       "filter": [
-        "==",
+        "!=",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],
@@ -6069,10 +6073,14 @@
       "source-layer": "contours",
       "minzoom": 10,
       "filter": [
-        ">",
+        "==",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],
@@ -6089,10 +6097,14 @@
       "source-layer": "contours",
       "minzoom": 11,
       "filter": [
-        ">",
+        "==",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],

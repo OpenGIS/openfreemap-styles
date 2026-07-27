@@ -33,7 +33,7 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // Flip these to enable/disable each feature section.
 
 const TERRAIN = false // 3D terrain hillshading (raster DEM)
-const CONTOURS = false // Vector contour lines (via maplibre-contour)
+const CONTOURS = 'pbf' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
@@ -55,14 +55,21 @@ const TERRAIN_SOURCE_ENCODING = 'terrarium'
 const TERRAIN_SOURCE_TILESIZE = 512
 const TERRAIN_SOURCE_MAXZOOM = 15
 
-// ── Vector contours (maplibre-contour plugin) ────────────────────────
+// ── Plugin contours (maplibre-contour) ───────────────────────────────
 // Uses the mlcontour:// protocol handler at runtime. The plugin generates
 // contour tiles client-side from the DEM.
 //   https://github.com/onthegomap/maplibre-contour
-// For direct PBF contour tiles (no runtime plugin), substitute:
+const CONTOUR_SOURCE_URL_PLUGIN = 'mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
+
+// ── PBF contours (direct vector tiles, no plugin) ────────────────────
+// Pre-generated PBF contour tiles from the TrailSplits API. 20 m
+// interval, source-layer 'contours' with 'ele' field (elevation in m).
+// No maplibre-contour plugin needed.
 //   https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf
-const CONTOUR_SOURCE_URL = 'mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_MAXZOOM = 15
+const CONTOUR_SOURCE_URL_PBF =
+  'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_PBF_MAXZOOM = 12
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours
@@ -122,20 +129,40 @@ if (TERRAIN) {
 // ═════════════════════════════════════════════════════════════════════════
 // 2. Contours  — above hillshade, below other overlays
 // ═════════════════════════════════════════════════════════════════════════
-// Uses the maplibre-contour JS plugin to generate vector contour tiles
-// at runtime from the DEM. The mlcontour:// protocol handler replaces
-// placeholder URLs on-the-fly.
+// Two modes, controlled by the CONTOURS constant:
 //
-// This requires demSource.setupMaplibre() and
-// demSource.contourProtocolUrl() at page load (see compare/main.js).
-// https://github.com/onthegomap/maplibre-contour
+//   'plugin' — uses maplibre-contour JS plugin to generate vector contour
+//              tiles at runtime from a DEM. The mlcontour:// protocol
+//              handler replaces placeholder URLs on-the-fly. Requires
+//              demSource.setupMaplibre() at page load (maxzoom 15).
+//              https://github.com/onthegomap/maplibre-contour
+//
+//   'pbf'    — direct PBF vector contour tiles (e.g. TrailSplits API).
+//              No runtime plugin required. Filters on 'ele' field for
+//              index-vs-minor (every 100 m = index) (maxzoom 12).
 
-if (CONTOURS) {
+const CONTOUR_FILTERS = {
+  plugin: {
+    minor: ['==', ['get', 'level'], 0],
+    index: ['>', ['get', 'level'], 0],
+  },
+  pbf: {
+    minor: ['!=', ['%', ['get', 'ele'], 100], 0],
+    index: ['==', ['%', ['get', 'ele'], 100], 0],
+  },
+}
+
+if (CONTOURS && CONTOUR_FILTERS[CONTOURS]) {
+  const isPlugin = CONTOURS === 'plugin'
+  const url = isPlugin ? CONTOUR_SOURCE_URL_PLUGIN : CONTOUR_SOURCE_URL_PBF
+  const maxzoom = isPlugin ? CONTOUR_SOURCE_PLUGIN_MAXZOOM : CONTOUR_SOURCE_PBF_MAXZOOM
+  const { minor, index } = CONTOUR_FILTERS[CONTOURS]
+
   style.sources['contour-source'] = {
     type: 'vector',
     minzoom: 10,
-    tiles: [CONTOUR_SOURCE_URL],
-    maxzoom: CONTOUR_SOURCE_MAXZOOM,
+    tiles: [url],
+    maxzoom,
   }
 
   style.layers.push(
@@ -145,7 +172,7 @@ if (CONTOURS) {
       source: 'contour-source',
       'source-layer': 'contours',
       minzoom: 10,
-      filter: ['==', ['get', 'level'], 0],
+      filter: minor,
       paint: {
         'line-color': COLOURS.CONTOUR_MINOR,
         'line-opacity': 0.25,
@@ -158,7 +185,7 @@ if (CONTOURS) {
       source: 'contour-source',
       'source-layer': 'contours',
       minzoom: 10,
-      filter: ['>', ['get', 'level'], 0],
+      filter: index,
       paint: {
         'line-color': COLOURS.CONTOUR_INDEX,
         'line-opacity': 0.1,
@@ -171,7 +198,7 @@ if (CONTOURS) {
       source: 'contour-source',
       'source-layer': 'contours',
       minzoom: 11,
-      filter: ['>', ['get', 'level'], 0],
+      filter: index,
       layout: {
         'symbol-placement': 'line',
         'symbol-avoid-edges': true,
