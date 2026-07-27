@@ -28,8 +28,9 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 
 // ── Setup
 
-const ACTIVITY = true
+const ACTIVITY = false
 const CONTOURS = true
+
 const COLOURS = {
   // Paths & trails
   PATH: '#c05a2a',
@@ -49,8 +50,8 @@ const COLOURS = {
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 }
 
-const WAYMARKED_ACTIVITIES = ['hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes']
-// const WAYMARKED_ACTIVITIES = []
+// const WAYMARKED_ACTIVITIES = ['hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes']
+const WAYMARKED_ACTIVITIES = []
 
 // ── 1. Read & deep-clone liberty ──
 const liberty = JSON.parse(readFileSync(libertyPath, 'utf8'))
