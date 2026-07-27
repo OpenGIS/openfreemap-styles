@@ -15,8 +15,8 @@
  *   terrain → contours → waymarked trails → mtb/bicycle → path styling
  *
  * Usage:
- *   node scripts/build.mjs          # one-shot build
- *   node scripts/build.mjs --watch  # rebuild on changes
+ *   node styles/outdoor/scripts/build.mjs          # one-shot build
+ *   node styles/outdoor/scripts/build.mjs --watch  # rebuild on changes
  */
 
 import { readFileSync, writeFileSync, watch } from 'node:fs'
@@ -24,7 +24,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(__dirname, '..')
+const ROOT = resolve(__dirname, '..', '..', '..')
 
 const libertyPath = resolve(ROOT, 'styles/liberty/style.json')
 const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')

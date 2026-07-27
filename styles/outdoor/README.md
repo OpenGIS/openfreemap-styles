@@ -19,11 +19,11 @@ Opens the compare app at [localhost:11000](http://localhost:11000) — Liberty o
 | `npm run demo:build`   | Build the compare app for production (`vite build`) |
 | `npm run demo:preview` | Preview the production build (`vite preview`)       |
 
-The style build script lives at the monorepo root — `scripts/build.mjs` (run via `pnpm run build` or `pnpm run build:watch` from root).
+The style build script lives inside this sub-project — `scripts/build.mjs` (run via `pnpm run build` or `pnpm run build:watch` from root).
 
 ## How it works
 
-The build script (`../../scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, and waymarked trail overlays.
+The build script (`scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, and waymarked trail overlays.
 
 Running `npm run dev` first invokes the build script, then starts the Vite dev server.
 
@@ -32,7 +32,7 @@ Running `npm run dev` first invokes the build script, then starts the Vite dev s
 The outdoor style includes contour lines. Two modes are available at build time:
 
 - **PBF** (default) — direct vector tiles from a local [contour-mvt-server](https://github.com/acalcutt/contour-mvt-server). Run `contours/` separately on port 11001.
-- **Plugin** — client-side contours via the [maplibre-contour](https://github.com/onthegomap/maplibre-contour) plugin. Set `CONTOURS = 'plugin'` in `scripts/build.mjs`.
+- **Plugin** — client-side contours via the [maplibre-contour](https://github.com/onthegomap/maplibre-contour) plugin. Set `CONTOURS = 'plugin'` in `scripts/build.mjs` within the outdoor sub-project.
 
 See [contours/README.md](contours/README.md) for server setup.
 
@@ -59,5 +59,5 @@ styles/outdoor/
 └── package.json
 
 scripts/
-└── build.mjs            # Style build script (root-level)
+└── build.mjs            # Style build script
 ```
