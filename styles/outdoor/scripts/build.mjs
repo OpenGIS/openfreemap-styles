@@ -33,7 +33,7 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // ═════════════════════════════════════════════════════════════════════════
 // Flip these to enable/disable each feature section.
 
-const TERRAIN = true // 3D terrain hillshading (raster DEM)
+const TERRAIN = false // 3D terrain hillshading (raster DEM)
 const CONTOURS = 'pbf' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
@@ -70,11 +70,11 @@ const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
 // source-layer 'contours' with 'ele' and 'level' fields.
 //
 // Local contour-mvt-server (self-hosted):
-const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+// const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
 // TrailSplits API (fallback, only serves up to z12):
-// const CONTOUR_SOURCE_URL_PBF =
-//   'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_PBF_MAXZOOM = 14
+const CONTOUR_SOURCE_URL_PBF =
+   'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
+const CONTOUR_SOURCE_PBF_MAXZOOM = 13
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours

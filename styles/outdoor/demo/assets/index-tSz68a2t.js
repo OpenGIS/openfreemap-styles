@@ -2847,6 +2847,7 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       "minzoom": 5,
       "filter": [
         "all",
+        ["==", ["typeof", ["get", "admin_level"]], "number"],
         [">=", ["get", "admin_level"], 3],
         ["<=", ["get", "admin_level"], 6],
         ["!=", ["get", "maritime"], 1],
@@ -3701,11 +3702,11 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
     },
     "contour-source": {
       "type": "vector",
-      "minzoom": 10,
+      "minzoom": 12,
       "tiles": [
         "https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf"
       ],
-      "maxzoom": 14
+      "maxzoom": 13
     }
   },
   "sprite": "https://__TILEJSON_DOMAIN__/sprites/ofm_f384/ofm",
@@ -7648,6 +7649,17 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       "filter": [
         "all",
         [
+          "==",
+          [
+            "typeof",
+            [
+              "get",
+              "admin_level"
+            ]
+          ],
+          "number"
+        ],
+        [
           ">=",
           [
             "get",
@@ -9733,7 +9745,8 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       "type": "line",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 10,
+      "minzoom": 12,
+      "maxzoom": 14,
       "filter": [
         "!=",
         [
@@ -9748,8 +9761,33 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       ],
       "paint": {
         "line-color": "rgb(126, 124, 121)",
-        "line-opacity": 0.25,
-        "line-width": 0.5
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.25,
+          14,
+          0.35
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.2
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.5,
+          14,
+          1
+        ]
       }
     },
     {
@@ -9757,7 +9795,8 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       "type": "line",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 10,
+      "minzoom": 12,
+      "maxzoom": 14,
       "filter": [
         "==",
         [
@@ -9772,8 +9811,33 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       ],
       "paint": {
         "line-color": "rgb(124, 122, 121)",
-        "line-opacity": 0.1,
-        "line-width": 1
+        "line-opacity": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          0.1,
+          14,
+          0.2
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.2
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          1,
+          14,
+          1.5
+        ]
       }
     },
     {
@@ -9781,7 +9845,8 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
       "type": "symbol",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 11,
+      "minzoom": 12,
+      "maxzoom": 14,
       "filter": [
         "==",
         [
@@ -9806,9 +9871,9 @@ ${b.shaderPreludeCode.vertexSource}`,define:b.shaderDefine},defaultProjectionDat
           [
             "zoom"
           ],
-          11,
-          6,
-          18,
+          12,
+          7,
+          14,
           10
         ],
         "text-field": [

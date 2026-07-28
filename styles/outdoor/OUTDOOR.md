@@ -31,6 +31,8 @@ This helped give me a better understanding of the activity based data available.
 
 # 2. Contours
 
+## `maplibre-contour`
+
 [![Click to view example](https://www.ogis.org/examples/outdoor/style-contours/screenshot.png)](https://www.ogis.org/examples/outdoor/style-contours/#12.95/45.81932/11.74289)
 
 [View Example](https://www.ogis.org/examples/outdoor/style-contours/#12.95/45.81932/11.74289)
@@ -41,6 +43,29 @@ Looks great, **BUT** this requires the `maplibre-contour` plugin at runtime, so 
 
 https://trailsplits.com/api#contours
 https://github.com/tracestrack/pmtiles-contour-server
+
+### Vector Contour Lines
+
+[![Click to view example](https://www.ogis.org/examples/outdoor/contours-pbf/screenshot.png)](https://www.ogis.org/examples/outdoor/contours-pbf/#12.95/45.81932/11.74289)
+
+[View Example](https://www.ogis.org/examples/outdoor/contours-pbf/#12.95/45.81932/11.74289)
+
+#### TrailSplits
+
+Non-commercial
+
+Contours have a max-zoom 12 (overscrolls to 13)
+
+https://api.trailsplits.com/tiles/v1/contours/current/metadata.json
+  
+
+#### Contour Server
+
+https://github.com/acalcutt/contour-mvt-server
+
+https://github.com/tracestrack/pmtiles-contour-server
+
+
 
 # 3. Waymarked Trails
 
@@ -56,4 +81,3 @@ In this example, the required relation-level tags (e.g. [ref=190, network=lwn](h
 
 Taking this further, I decided to all ALL activity layers available through waymarkedtrails ('hiking', 'cycling', 'mtb', 'skating', 'riding', 'slopes')... because why not?!
 
-# 4. TrailSplits
