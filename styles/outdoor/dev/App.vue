@@ -16,9 +16,6 @@ onMounted(async () => {
   const leftStyle = loadStyle(libertyStyleRaw)
   const rightStyle = loadStyle(outdoorStyleRaw)
 
-  // Use client-side contour plugin instead of PBF tiles:
-  setupContours(rightStyle)
-
   const leftMap = new maplibregl.Map({
     container: 'left',
     style: leftStyle,
@@ -33,6 +30,12 @@ onMounted(async () => {
     center: [9, 48],
     zoom: 3,
   })
+
+  // Initiate the maplibre-contour plugin when the style loads.
+  // The style.json already has the full contour source definition with
+  // the encoded dem-contour:// URL — we just need to register the
+  // protocol handler so maplibre can request contour tiles.
+  rightMap.once('load', () => setupContours())
 
   new MaplibreCompare(leftMap, rightMap, compareEl.value, {})
 

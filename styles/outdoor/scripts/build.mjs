@@ -57,11 +57,25 @@ const TERRAIN_SOURCE_TILESIZE = 512
 const TERRAIN_SOURCE_MAXZOOM = 15
 
 // ── Plugin contours (maplibre-contour) ───────────────────────────────
-// Uses the mlcontour:// protocol handler at runtime. The plugin generates
-// contour tiles client-side from the DEM.
+// Uses the dem-contour:// protocol handler at runtime. The full URL
+// including encoded thresholds is baked into style.json at build time
+// so no runtime tile URL replacement is needed.
 //   https://github.com/onthegomap/maplibre-contour
-const CONTOUR_SOURCE_URL_PLUGIN = 'mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 20
+const CONTOUR_PLUGIN_ID = 'dem'   // Must match DemSource id at runtime
+const CONTOUR_PLUGIN_MAXZOOM = 20
+const CONTOUR_PLUGIN_THRESHOLDS = {
+  0: [100, 500],
+  5: [50, 250],
+  10: [25, 100],
+  15: [25, 100],
+}
+const CONTOUR_PLUGIN_EXTRA_OPTIONS = {
+  contourLayer: 'contours',
+  elevationKey: 'ele',
+  levelKey: 'level',
+  extent: 4096,
+  buffer: 1,
+}
 
 // ── PBF contours (direct vector tiles, no plugin) ────────────────────
 // Self-hosted contour-mvt-server (styles/outdoor/contours/). Runs
@@ -97,6 +111,34 @@ const COLOURS = {
   CONTOUR_INDEX: 'rgb(124, 122, 121)',
   CONTOUR_LABEL: '#5c5c5c',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build the full maplibre-contour plugin tile URL with encoded thresholds
+ * and options baked into the query string. Produces URLs like:
+ *   dem-contour://{z}/{x}/{y}?buffer=1&contourLayer=contours&...&thresholds=0*100*500~...
+ *
+ * This replicates the private encodeOptions() from the maplibre-contour
+ * package so we don't need to import DemSource at build time.
+ */
+function buildContourTileUrl(id, thresholds, extraOptions) {
+  const thresholdStr = Object.entries(thresholds)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([zoom, values]) => [zoom, ...values].join('*'))
+    .join('~')
+
+  const allOpts = { ...extraOptions, thresholds: thresholdStr }
+
+  const query = Object.keys(allOpts)
+    .sort()
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(String(allOpts[k]))}`)
+    .join('&')
+
+  return `${id}-contour://{z}/{x}/{y}?${query}`
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -143,8 +185,10 @@ function build() {
 
   if (CONTOURS && CONTOUR_FILTERS[CONTOURS]) {
     const isPlugin = CONTOURS === 'plugin'
-    const url = isPlugin ? CONTOUR_SOURCE_URL_PLUGIN : CONTOUR_SOURCE_URL_PBF
-    const maxzoom = isPlugin ? CONTOUR_SOURCE_PLUGIN_MAXZOOM : CONTOUR_SOURCE_PBF_MAXZOOM
+    const url = isPlugin
+      ? buildContourTileUrl(CONTOUR_PLUGIN_ID, CONTOUR_PLUGIN_THRESHOLDS, CONTOUR_PLUGIN_EXTRA_OPTIONS)
+      : CONTOUR_SOURCE_URL_PBF
+    const maxzoom = isPlugin ? CONTOUR_PLUGIN_MAXZOOM : CONTOUR_SOURCE_PBF_MAXZOOM
     const { minor, index } = CONTOUR_FILTERS[CONTOURS]
 
     style.sources['contour-source'] = {

@@ -34,10 +34,14 @@ export function setupMap(leftStyle, rightStyle) {
 }
 
 /**
- * Replace PBF contour source with client-side maplibre-contour plugin.
- * Only needed when using the 'plugin' contour mode at runtime.
+ * Initiate the maplibre-contour plugin.
+ *
+ * Registers the dem-contour:// protocol handler so contour tiles are
+ * generated client-side from the DEM. The style.json already contains
+ * the full contour source definition with an encoded protocol URL, so
+ * this only needs to register the handler — no style object changes.
  */
-export function setupContours(style) {
+export function setupContours() {
   const demSource = new mlcontour.DemSource({
     url: 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp',
     encoding: 'terrarium',
@@ -46,20 +50,4 @@ export function setupContours(style) {
   })
 
   demSource.setupMaplibre(maplibregl)
-
-  const contourTileUrl = demSource.contourProtocolUrl({
-    thresholds: {
-      0: [100, 500],
-      5: [50, 250],
-      10: [25, 100],
-      15: [25, 100],
-    },
-    contourLayer: 'contours',
-    elevationKey: 'ele',
-    levelKey: 'level',
-    extent: 4096,
-    buffer: 1,
-  })
-
-  style.sources['contour-source'].tiles = [contourTileUrl]
 }

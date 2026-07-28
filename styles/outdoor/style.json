@@ -17,7 +17,7 @@
       "type": "vector",
       "minzoom": 12,
       "tiles": [
-        "mlcontour://placeholder/contours/{z}/{x}/{y}.pbf"
+        "dem-contour://{z}/{x}/{y}?buffer=1&contourLayer=contours&elevationKey=ele&extent=4096&levelKey=level&thresholds=0*100*500~5*50*250~10*25*100~15*25*100"
       ],
       "maxzoom": 20
     }
