@@ -120,11 +120,9 @@ const CONTOUR_PBF_TILE_URL =
 const CONTOUR_PBF_SOURCE_MINZOOM = 9
 const CONTOUR_PBF_SOURCE_MAXZOOM = 12  // TrailSplits caps at z12; local server goes to z14
 
-// Units for PBF label expressions. Baked into the style at build time
-// (no runtime entry point for PBF mode).
-//   'metric'   → '120m'  (no multiplier applied)
-//   'imperial' → '394ft' (multiplied by 3.28084)
-const CONTOUR_PBF_UNITS = 'imperial'
+// PBF labels always use metric at build time. For imperial units, the
+// runtime scripts/contours.js patches the label expression before the
+// map loads the style (both plugin and PBF modes are handled there).
 
 // ── Shared layer zoom limit ───────────────────────────────────────────
 // All contour layers stop rendering at this zoom. Kept independent of
@@ -214,13 +212,13 @@ function build() {
   // ═══════════════════════════════════════════════════════════════════════
   // 2. Contours — maplibre-contour plugin (GPU-generated, client-side)
   // ═══════════════════════════════════════════════════════════════════════
-  // The plugin is registered at runtime by dev/map.js's setupContours().
-  // It intercepts dem-contour:// tile requests and generates contour
-  // vector tiles from raw DEM raster data in a Web Worker.
+  // The plugin is registered at runtime by scripts/contours.js's
+  // setupContours(). It intercepts dem-contour:// tile requests and
+  // generates contour vector tiles from raw DEM data in a Web Worker.
   //
   // Labels always use metric suffix ('m') at build time. For imperial
-  // units, setupContours('imperial') patches the style at runtime
-  // (both the multiplier in the URL and the label suffix).
+  // units, setupContours(style, 'imperial') patches the style at
+  // runtime (both the multiplier in the URL and the label suffix).
   // ═══════════════════════════════════════════════════════════════════════
 
   if (CONTOURS_USE_PLUGIN) {
@@ -270,7 +268,7 @@ function build() {
       },
       {
         // Contour labels — on index lines only
-        // Runtime: setupContours('imperial') patches 'm' → 'ft'
+        // Runtime: setupContours(style, 'imperial') patches 'm' → 'ft'
         id: 'contour-labels',
         type: 'symbol',
         source: 'contour-source',
@@ -303,15 +301,15 @@ function build() {
   // No client-side contour generation — the server pre-generates
   // contour lines from DEM data.
   //
-  // Units are baked into the style at build time via CONTOUR_PBF_UNITS.
-  // No runtime entry point needed (no plugin to register).
+  // Labels always use metric at build time. For imperial units, the
+  // runtime scripts/contours.js patches the expression before the map
+  // loads the style (same pattern as the plugin mode).
   // ═══════════════════════════════════════════════════════════════════════
 
   if (!CONTOURS_USE_PLUGIN) {
-    // Build-time label expression — metric or imperial baked in
-    const labelExpr = CONTOUR_PBF_UNITS === 'imperial'
-      ? ['concat', ['number-format', ['round', ['*', ['get', 'ele'], 3.28084]], {}], 'ft']
-      : ['concat', ['number-format', ['round', ['get', 'ele']], {}], 'm']
+    // Label expression — always metric at build time. Runtime
+    // scripts/contours.js patches to imperial when needed.
+    const labelExpr = ['concat', ['number-format', ['round', ['get', 'ele']], {}], 'm']
 
     style.sources['contour-source'] = {
       type: 'vector',
@@ -353,7 +351,8 @@ function build() {
       },
       {
         // Contour labels — on index lines only
-        // Units baked at build time by CONTOUR_PBF_UNITS
+        // Labels always metric at build time. scripts/contours.js
+        // patches to imperial at runtime when needed.
         id: 'contour-labels',
         type: 'symbol',
         source: 'contour-source',

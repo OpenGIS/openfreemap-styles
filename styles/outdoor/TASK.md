@@ -14,4 +14,4 @@ To fix this, the build script should:
 
 Pay particular attention to how the min/max zoom constants are defined for each. Set the initial consts for so that contour lines are displayed as high as possible for each, including overzoom. I want to make sure that if contour data is available, it is rendered.
 
-I also want support for metric/imperial contour labels. I know this is documented for the plugin, so would be a simple change to @dev/map.js I am not sure how this is achieved through pbf.
+I also want support for metric/imperial contour labels. I know this is documented for the plugin, so would be a simple change to @scripts/contours.js I am not sure how this is achieved through pbf.

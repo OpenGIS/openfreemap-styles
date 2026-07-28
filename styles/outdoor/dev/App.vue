@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { loadStyle } from './style.js'
-import { setupContours } from './map.js'
+import { setupContours } from '../scripts/contours.js'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import MaplibreCompare from '@maplibre/maplibre-gl-compare'
@@ -16,17 +16,10 @@ onMounted(async () => {
   const leftStyle = loadStyle(libertyStyleRaw)
   const rightStyle = loadStyle(outdoorStyleRaw)
 
-  // Detect contour implementation from the style itself. If the contour
-  // source uses dem-contour:// protocol, register the maplibre-contour
-  // plugin and apply any unit patching BEFORE the map parses the style.
-  // This stays in sync with whatever CONTOURS_USE_PLUGIN was set to at
-  // build time — no manual flag coordination needed.
-  const usesContourPlugin = rightStyle?.sources?.['contour-source']?.tiles?.some(
-    t => typeof t === 'string' && t.startsWith('dem-contour://'),
-  )
-  if (usesContourPlugin) {
-    setupContours(rightStyle, 'imperial')
-  }
+  // Register plugin & patch for imperial units BEFORE the map parses
+  // the style. setupContours handles both plugin and PBF modes
+  // internally — it detects contour mode from the style itself.
+  setupContours(rightStyle, 'imperial')
 
   const leftMap = new maplibregl.Map({
     container: 'left',

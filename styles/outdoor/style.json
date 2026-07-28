@@ -6196,17 +6196,13 @@
             [
               "round",
               [
-                "*",
-                [
-                  "get",
-                  "ele"
-                ],
-                3.28084
+                "get",
+                "ele"
               ]
             ],
             {}
           ],
-          "ft"
+          "m"
         ],
         "text-font": [
           "Noto Sans Regular"

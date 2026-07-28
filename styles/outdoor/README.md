@@ -32,8 +32,8 @@ via `CONTOURS_USE_PLUGIN` in `scripts/build.mjs`:
 
 | Toggle | Approach | Unit support |
 |--------|----------|-------------|
-| `CONTOURS_USE_PLUGIN = true` (default) | **Plugin** — client-side [maplibre-contour](https://github.com/onthegomap/maplibre-contour) generates contours on the GPU from raw DEM tiles | Runtime via `setupContours(style, 'imperial')` in `dev/map.js` |
-| `CONTOURS_USE_PLUGIN = false` | **PBF** — server-generated vector tiles (TrailSplits API or local contour-mvt-server) | Build-time via `CONTOUR_PBF_UNITS` constant in `build.mjs` |
+| `CONTOURS_USE_PLUGIN = true` (default) | **Plugin** — client-side [maplibre-contour](https://github.com/onthegomap/maplibre-contour) generates contours on the GPU from raw DEM tiles | Runtime via `setupContours(style, 'imperial')` in `scripts/contours.js` |
+| `CONTOURS_USE_PLUGIN = false` | **PBF** — server-generated vector tiles (TrailSplits API or local contour-mvt-server) | Runtime via `setupContours(style, 'imperial')` in `scripts/contours.js` |
 
 See [CONTOURS_PBF.md](CONTOURS_PBF.md) for PBF-specific limitations and setup.
 

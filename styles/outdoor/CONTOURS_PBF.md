@@ -43,13 +43,11 @@ server processing.
 
 ## Units
 
-PBF labels use the build-time constant `CONTOUR_PBF_UNITS`:
+PBF labels always use metric at build time (elevation suffix `'m'`). The
+`CONTOUR_PBF_UNITS` constant has been removed.
 
-| Value      | Label format | Example  |
-|------------|-------------|----------|
-| `'metric'` | `120m`      | 120 m    |
-| `'imperial'` | `394ft`   | 394 ft   |
-
-Unlike the plugin mode, PBF has no runtime entry point — units are baked
-into the style at build time. Toggle `CONTOURS_USE_PLUGIN` and rebuild to
-switch implementations.
+For imperial units, the runtime module `scripts/contours.js` patches the
+label expression: it multiplies the `ele` value by 3.28084 and changes the
+suffix to `'ft'`. This is done by `setupContours(style, 'imperial')`,
+mirroring the plugin mode — both implementations now use the same runtime
+entry point.
