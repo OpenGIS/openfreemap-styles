@@ -31,11 +31,10 @@ onMounted(async () => {
     zoom: 3,
   })
 
-  // Initiate the maplibre-contour plugin when the style loads.
-  // The style.json already has the full contour source definition with
-  // the encoded dem-contour:// URL — we just need to register the
-  // protocol handler so maplibre can request contour tiles.
-  rightMap.once('load', () => setupContours())
+  // Register the maplibre-contour protocol handlers before the maps
+  // load the style. The style.json already has the full contour source
+  // definition with the encoded dem-contour:// URL in the tiles array.
+  setupContours()
 
   new MaplibreCompare(leftMap, rightMap, compareEl.value, {})
 

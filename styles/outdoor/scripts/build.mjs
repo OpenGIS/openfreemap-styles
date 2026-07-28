@@ -90,6 +90,12 @@ const CONTOUR_SOURCE_URL_PBF =
    'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
 const CONTOUR_SOURCE_PBF_MAXZOOM = 13
 
+// ── Shared layer zoom limit ───────────────────────────────────────────
+// All contour layers stop rendering at this zoom. Kept independent of
+// the source maxzoom so the layer ceiling can be tuned for visual density
+// without affecting tile requests.
+const CONTOUR_LAYER_MAXZOOM = 16
+
 // ═════════════════════════════════════════════════════════════════════════
 // Colours
 // ═════════════════════════════════════════════════════════════════════════
@@ -205,7 +211,7 @@ function build() {
         source: 'contour-source',
         'source-layer': 'contours',
         minzoom: 12,
-        maxzoom: 14,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
         filter: minor,
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
@@ -219,7 +225,7 @@ function build() {
         source: 'contour-source',
         'source-layer': 'contours',
         minzoom: 12,
-        maxzoom: 14,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
         filter: index,
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
@@ -233,7 +239,7 @@ function build() {
         source: 'contour-source',
         'source-layer': 'contours',
         minzoom: 12,
-        maxzoom: 14,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
         filter: index,
         layout: {
           'symbol-placement': 'line',
