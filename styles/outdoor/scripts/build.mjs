@@ -34,7 +34,7 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // Flip these to enable/disable each feature section.
 
 const TERRAIN = false // 3D terrain hillshading (raster DEM)
-const CONTOURS = 'pbf' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
+const CONTOURS = 'plugin' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
@@ -61,7 +61,7 @@ const TERRAIN_SOURCE_MAXZOOM = 15
 // contour tiles client-side from the DEM.
 //   https://github.com/onthegomap/maplibre-contour
 const CONTOUR_SOURCE_URL_PLUGIN = 'mlcontour://placeholder/contours/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 15
+const CONTOUR_SOURCE_PLUGIN_MAXZOOM = 20
 
 // ── PBF contours (direct vector tiles, no plugin) ────────────────────
 // Self-hosted contour-mvt-server (styles/outdoor/contours/). Runs

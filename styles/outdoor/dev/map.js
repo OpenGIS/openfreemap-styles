@@ -1,4 +1,5 @@
 import mlcontour from 'maplibre-contour'
+import maplibregl from 'maplibre-gl'
 
 /**
  * Set up a side-by-side compare with two MapLibre maps.
@@ -40,7 +41,7 @@ export function setupContours(style) {
   const demSource = new mlcontour.DemSource({
     url: 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp',
     encoding: 'terrarium',
-    maxzoom: 13,
+    maxzoom: 20,
     worker: true,
   })
 

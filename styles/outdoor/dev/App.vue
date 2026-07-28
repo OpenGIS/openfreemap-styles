@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { loadStyle } from './style.js'
+import { setupContours } from './map.js'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import MaplibreCompare from '@maplibre/maplibre-gl-compare'
@@ -15,8 +16,8 @@ onMounted(async () => {
   const leftStyle = loadStyle(libertyStyleRaw)
   const rightStyle = loadStyle(outdoorStyleRaw)
 
-  // Uncomment to use client-side contour plugin instead of PBF tiles:
-  // setupContours(rightStyle)
+  // Use client-side contour plugin instead of PBF tiles:
+  setupContours(rightStyle)
 
   const leftMap = new maplibregl.Map({
     container: 'left',
