@@ -6059,7 +6059,7 @@
       "source": "contour-source",
       "source-layer": "contours",
       "minzoom": 12,
-      "maxzoom": 16,
+      "maxzoom": 20,
       "filter": [
         "==",
         [
@@ -6069,7 +6069,7 @@
         0
       ],
       "paint": {
-        "line-color": "rgb(126, 124, 121)",
+        "line-color": "rgb(200, 196, 190)",
         "line-opacity": [
           "interpolate",
           [
@@ -6079,9 +6079,9 @@
             "zoom"
           ],
           12,
-          0.25,
+          0.2,
           14,
-          0.35
+          0.3
         ],
         "line-width": [
           "interpolate",
@@ -6105,7 +6105,7 @@
       "source": "contour-source",
       "source-layer": "contours",
       "minzoom": 12,
-      "maxzoom": 16,
+      "maxzoom": 20,
       "filter": [
         ">",
         [
@@ -6115,7 +6115,7 @@
         0
       ],
       "paint": {
-        "line-color": "rgb(124, 122, 121)",
+        "line-color": "rgb(100, 95, 90)",
         "line-opacity": [
           "interpolate",
           [
@@ -6125,9 +6125,9 @@
             "zoom"
           ],
           12,
-          0.1,
+          0.35,
           14,
-          0.2
+          0.5
         ],
         "line-width": [
           "interpolate",
@@ -6139,9 +6139,9 @@
             "zoom"
           ],
           12,
-          1,
+          1.5,
           14,
-          1.5
+          2
         ]
       }
     },
@@ -6151,7 +6151,7 @@
       "source": "contour-source",
       "source-layer": "contours",
       "minzoom": 12,
-      "maxzoom": 16,
+      "maxzoom": 20,
       "filter": [
         ">",
         [
@@ -6173,9 +6173,9 @@
             "zoom"
           ],
           12,
-          7,
+          10,
           14,
-          10
+          12
         ],
         "text-field": [
           "concat",
@@ -6195,7 +6195,7 @@
         "text-padding": 0
       },
       "paint": {
-        "text-color": "#5c5c5c",
+        "text-color": "#4a4a4a",
         "text-halo-color": "rgba(255, 255, 255, 0.85)",
         "text-halo-width": 1.25
       }

@@ -94,7 +94,7 @@ const CONTOUR_SOURCE_PBF_MAXZOOM = 13
 // All contour layers stop rendering at this zoom. Kept independent of
 // the source maxzoom so the layer ceiling can be tuned for visual density
 // without affecting tile requests.
-const CONTOUR_LAYER_MAXZOOM = 16
+const CONTOUR_LAYER_MAXZOOM = 20
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours
@@ -113,9 +113,9 @@ const COLOURS = {
   BICYCLE_ACCESS: '#8c64bd',
 
   // Contour lines & labels
-  CONTOUR_MINOR: 'rgb(126, 124, 121)',
-  CONTOUR_INDEX: 'rgb(124, 122, 121)',
-  CONTOUR_LABEL: '#5c5c5c',
+  CONTOUR_MINOR: 'rgb(200, 196, 190)',
+  CONTOUR_INDEX: 'rgb(100, 95, 90)',
+  CONTOUR_LABEL: '#4a4a4a',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 }
 
@@ -215,7 +215,7 @@ function build() {
         filter: minor,
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.25, 14, 0.35],
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.2, 14, 0.3],
           'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0],
         },
       },
@@ -229,8 +229,8 @@ function build() {
         filter: index,
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.1, 14, 0.2],
-          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.0, 14, 1.5],
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 14, 0.5],
+          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.5, 14, 2.0],
         },
       },
       {
@@ -245,7 +245,7 @@ function build() {
           'symbol-placement': 'line',
           'symbol-avoid-edges': true,
           'text-rotation-alignment': 'map',
-          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 7, 14, 10],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 14, 12],
           'text-field': ['concat', ['number-format', ['get', 'ele'], {}], 'm'],
           'text-font': ['Noto Sans Regular'],
           'text-padding': 0,

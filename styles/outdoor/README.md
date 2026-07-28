@@ -29,6 +29,9 @@ Running `npm run dev` starts Vite (HMR on `style.json`) alongside `scripts/watch
 
 The outdoor style includes contour lines. Two modes are available at build time:
 
+> [!NOTE]
+> **Units:** Contours are currently metric-only (metre elevations, labels display `m`). To support imperial (feet), a runtime `multiplier` option (e.g. `3.28084`) and alternate label suffix (`ft`) would need to be added to the maplibre-contour configuration — planned for a future update.
+
 - **PBF** (default) — direct vector tiles from a local [contour-mvt-server](https://github.com/acalcutt/contour-mvt-server). Run `contours/` separately on port 11001.
 - **Plugin** — client-side contours via the [maplibre-contour](https://github.com/onthegomap/maplibre-contour) plugin. Set `CONTOURS = 'plugin'` in `scripts/build.mjs` within the outdoor sub-project.
 
