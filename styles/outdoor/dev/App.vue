@@ -16,6 +16,18 @@ onMounted(async () => {
   const leftStyle = loadStyle(libertyStyleRaw)
   const rightStyle = loadStyle(outdoorStyleRaw)
 
+  // Detect contour implementation from the style itself. If the contour
+  // source uses dem-contour:// protocol, register the maplibre-contour
+  // plugin and apply any unit patching BEFORE the map parses the style.
+  // This stays in sync with whatever CONTOURS_USE_PLUGIN was set to at
+  // build time — no manual flag coordination needed.
+  const usesContourPlugin = rightStyle?.sources?.['contour-source']?.tiles?.some(
+    t => typeof t === 'string' && t.startsWith('dem-contour://'),
+  )
+  if (usesContourPlugin) {
+    setupContours(rightStyle, 'imperial')
+  }
+
   const leftMap = new maplibregl.Map({
     container: 'left',
     style: leftStyle,
@@ -30,11 +42,6 @@ onMounted(async () => {
     center: [9, 48],
     zoom: 3,
   })
-
-  // Register the maplibre-contour protocol handlers before the maps
-  // load the style. The style.json already has the full contour source
-  // definition with the encoded dem-contour:// URL in the tiles array.
-  setupContours()
 
   new MaplibreCompare(leftMap, rightMap, compareEl.value, {})
 

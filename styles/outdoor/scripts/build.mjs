@@ -34,7 +34,7 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // Flip these to enable/disable each feature section.
 
 const TERRAIN = false // 3D terrain hillshading (raster DEM)
-const CONTOURS = 'plugin' // 'plugin' (maplibre-contour), 'pbf' (direct PBF tiles), or false
+const CONTOURS_USE_PLUGIN = false // true = maplibre-contour plugin (GPU, client-side), false = PBF vector tiles (server)
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
@@ -56,39 +56,75 @@ const TERRAIN_SOURCE_ENCODING = 'terrarium'
 const TERRAIN_SOURCE_TILESIZE = 512
 const TERRAIN_SOURCE_MAXZOOM = 15
 
-// ── Plugin contours (maplibre-contour) ───────────────────────────────
-// Uses the dem-contour:// protocol handler at runtime. The full URL
-// including encoded thresholds is baked into style.json at build time
-// so no runtime tile URL replacement is needed.
-//   https://github.com/onthegomap/maplibre-contour
-const CONTOUR_PLUGIN_ID = 'dem'   // Must match DemSource id at runtime
-const CONTOUR_PLUGIN_MAXZOOM = 20
+// ── Plugin contours (maplibre-contour — GPU-generated, client-side) ──
+// The maplibre-contour plugin generates contour vector tiles on the
+// client from raw DEM raster data. No server-side contour processing
+// needed — the DemSource protocol handler decodes DEM tiles and runs
+// contour algorithms in a Web Worker.
+//
+// Only used when CONTOURS_USE_PLUGIN = true.
+// Reference: https://github.com/onthegomap/maplibre-contour
+//
+// DEM source — raw elevation tiles the plugin reads to generate contours:
+const CONTOUR_PLUGIN_DEM_URL = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'
+const CONTOUR_PLUGIN_DEM_ENCODING = 'terrarium'
+const CONTOUR_PLUGIN_DEM_MAXZOOM = 20
+//
+// Contour source zoom range. The plugin starts generating coarse
+// contours at source minzoom and gets more detailed at higher zooms.
+// maxzoom should match the DEM maxzoom for best fidelity.
+const CONTOUR_PLUGIN_SOURCE_MINZOOM = 9
+const CONTOUR_PLUGIN_SOURCE_MAXZOOM = 20
+//
+// Thresholds define contour intervals: [minor_interval, major_interval]
+// in metres at each zoom level. Minor = regular contour line, major =
+// index (thicker, labelled) contour line.
 const CONTOUR_PLUGIN_THRESHOLDS = {
-  0: [100, 500],
-  5: [50, 250],
-  10: [25, 100],
-  15: [25, 100],
+  9:  [500, 2500],
+  11: [200, 1000],
+  12: [100, 500],
+  14: [50, 200],
+  15: [20, 100],
 }
+//
+// Extra options passed as query parameters in the dem-contour:// URL.
+// These tell the plugin how to encode the generated vector tiles.
+// See the maplibre-contour README for all available options.
 const CONTOUR_PLUGIN_EXTRA_OPTIONS = {
   contourLayer: 'contours',
   elevationKey: 'ele',
   levelKey: 'level',
   extent: 4096,
   buffer: 1,
+  overzoom: 1,             // Allow overzoom beyond DEM maxzoom
 }
+const CONTOUR_PLUGIN_PROTOCOL_ID = 'dem'  // Must match DemSource.setupMaplibre() id at runtime
 
-// ── PBF contours (direct vector tiles, no plugin) ────────────────────
-// Self-hosted contour-mvt-server (styles/outdoor/contours/). Runs
-// on-demand from AWS Terrarium DEM tiles. 20 m minor / 100 m major
-// intervals at z10-12, increasing detail at higher zooms.
-// source-layer 'contours' with 'ele' and 'level' fields.
+// ── PBF contours (server-generated vector tiles, no plugin) ───────────
+// Direct PBF vector tiles from a server that pre-generates contour
+// lines from DEM data. No client-side processing — standard
+// Mapbox Vector Tiles (application/x-protobuf).
 //
-// Local contour-mvt-server (self-hosted):
-// const CONTOUR_SOURCE_URL_PBF = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
-// TrailSplits API (fallback, only serves up to z12):
-const CONTOUR_SOURCE_URL_PBF =
+// Only used when CONTOURS_USE_PLUGIN = false.
+// Reference: https://trailsplits.com/api#contours
+//
+// Each feature has 'ele' (elevation in metres) and 'level' fields.
+// Source-layer: 'contours'.
+//
+// TrailSplits API (free, no key — caps at z12):
+const CONTOUR_PBF_TILE_URL =
    'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
-const CONTOUR_SOURCE_PBF_MAXZOOM = 13
+// Local contour-mvt-server (self-hosted, goes to z14):
+// const CONTOUR_PBF_TILE_URL = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+
+const CONTOUR_PBF_SOURCE_MINZOOM = 9
+const CONTOUR_PBF_SOURCE_MAXZOOM = 12  // TrailSplits caps at z12; local server goes to z14
+
+// Units for PBF label expressions. Baked into the style at build time
+// (no runtime entry point for PBF mode).
+//   'metric'   → '120m'  (no multiplier applied)
+//   'imperial' → '394ft' (multiplied by 3.28084)
+const CONTOUR_PBF_UNITS = 'imperial'
 
 // ── Shared layer zoom limit ───────────────────────────────────────────
 // All contour layers stop rendering at this zoom. Kept independent of
@@ -176,43 +212,41 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 2. Contours
+  // 2. Contours — maplibre-contour plugin (GPU-generated, client-side)
   // ═══════════════════════════════════════════════════════════════════════
-  const CONTOUR_FILTERS = {
-    plugin: {
-      minor: ['==', ['get', 'level'], 0],
-      index: ['>', ['get', 'level'], 0],
-    },
-    pbf: {
-      minor: ['!=', ['%', ['get', 'ele'], 100], 0],
-      index: ['==', ['%', ['get', 'ele'], 100], 0],
-    },
-  }
+  // The plugin is registered at runtime by dev/map.js's setupContours().
+  // It intercepts dem-contour:// tile requests and generates contour
+  // vector tiles from raw DEM raster data in a Web Worker.
+  //
+  // Labels always use metric suffix ('m') at build time. For imperial
+  // units, setupContours('imperial') patches the style at runtime
+  // (both the multiplier in the URL and the label suffix).
+  // ═══════════════════════════════════════════════════════════════════════
 
-  if (CONTOURS && CONTOUR_FILTERS[CONTOURS]) {
-    const isPlugin = CONTOURS === 'plugin'
-    const url = isPlugin
-      ? buildContourTileUrl(CONTOUR_PLUGIN_ID, CONTOUR_PLUGIN_THRESHOLDS, CONTOUR_PLUGIN_EXTRA_OPTIONS)
-      : CONTOUR_SOURCE_URL_PBF
-    const maxzoom = isPlugin ? CONTOUR_PLUGIN_MAXZOOM : CONTOUR_SOURCE_PBF_MAXZOOM
-    const { minor, index } = CONTOUR_FILTERS[CONTOURS]
+  if (CONTOURS_USE_PLUGIN) {
+    const url = buildContourTileUrl(
+      CONTOUR_PLUGIN_PROTOCOL_ID,
+      CONTOUR_PLUGIN_THRESHOLDS,
+      CONTOUR_PLUGIN_EXTRA_OPTIONS,
+    )
 
     style.sources['contour-source'] = {
       type: 'vector',
-      minzoom: 12,
+      minzoom: CONTOUR_PLUGIN_SOURCE_MINZOOM,
       tiles: [url],
-      maxzoom,
+      maxzoom: CONTOUR_PLUGIN_SOURCE_MAXZOOM,
     }
 
     style.layers.push(
       {
+        // Minor contour lines (level = 0)
         id: 'contour-lines',
         type: 'line',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 12,
+        minzoom: CONTOUR_PLUGIN_SOURCE_MINZOOM,
         maxzoom: CONTOUR_LAYER_MAXZOOM,
-        filter: minor,
+        filter: ['==', ['get', 'level'], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
           'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.2, 14, 0.3],
@@ -220,13 +254,14 @@ function build() {
         },
       },
       {
+        // Index contour lines (level > 0) — thicker, darker, labelled
         id: 'contour-lines-index',
         type: 'line',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 12,
+        minzoom: CONTOUR_PLUGIN_SOURCE_MINZOOM,
         maxzoom: CONTOUR_LAYER_MAXZOOM,
-        filter: index,
+        filter: ['>', ['get', 'level'], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
           'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 14, 0.5],
@@ -234,19 +269,21 @@ function build() {
         },
       },
       {
+        // Contour labels — on index lines only
+        // Runtime: setupContours('imperial') patches 'm' → 'ft'
         id: 'contour-labels',
         type: 'symbol',
         source: 'contour-source',
         'source-layer': 'contours',
-        minzoom: 12,
+        minzoom: CONTOUR_PLUGIN_SOURCE_MINZOOM,
         maxzoom: CONTOUR_LAYER_MAXZOOM,
-        filter: index,
+        filter: ['>', ['get', 'level'], 0],
         layout: {
           'symbol-placement': 'line',
           'symbol-avoid-edges': true,
           'text-rotation-alignment': 'map',
           'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 14, 12],
-          'text-field': ['concat', ['number-format', ['get', 'ele'], {}], 'm'],
+          'text-field': ['concat', ['number-format', ['get', 'ele'], { 'max-fraction-digits': 0 }], 'm'],
           'text-font': ['Noto Sans Regular'],
           'text-padding': 0,
         },
@@ -260,7 +297,90 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 3. Waymarked Trails
+  // 3. Contours — PBF vector tiles (server-generated)
+  // ═══════════════════════════════════════════════════════════════════════
+  // Standard Mapbox Vector Tiles served as application/x-protobuf.
+  // No client-side contour generation — the server pre-generates
+  // contour lines from DEM data.
+  //
+  // Units are baked into the style at build time via CONTOUR_PBF_UNITS.
+  // No runtime entry point needed (no plugin to register).
+  // ═══════════════════════════════════════════════════════════════════════
+
+  if (!CONTOURS_USE_PLUGIN) {
+    // Build-time label expression — metric or imperial baked in
+    const labelExpr = CONTOUR_PBF_UNITS === 'imperial'
+      ? ['concat', ['number-format', ['round', ['*', ['get', 'ele'], 3.28084]], {}], 'ft']
+      : ['concat', ['number-format', ['round', ['get', 'ele']], {}], 'm']
+
+    style.sources['contour-source'] = {
+      type: 'vector',
+      minzoom: CONTOUR_PBF_SOURCE_MINZOOM,
+      tiles: [CONTOUR_PBF_TILE_URL],
+      maxzoom: CONTOUR_PBF_SOURCE_MAXZOOM,
+    }
+
+    style.layers.push(
+      {
+        // Minor contour lines (ele not divisible by 100)
+        id: 'contour-lines',
+        type: 'line',
+        source: 'contour-source',
+        'source-layer': 'contours',
+        minzoom: CONTOUR_PBF_SOURCE_MINZOOM,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
+        filter: ['!=', ['%', ['get', 'ele'], 100], 0],
+        paint: {
+          'line-color': COLOURS.CONTOUR_MINOR,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.2, 14, 0.3],
+          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0],
+        },
+      },
+      {
+        // Index contour lines (ele divisible by 100) — thicker, darker, labelled
+        id: 'contour-lines-index',
+        type: 'line',
+        source: 'contour-source',
+        'source-layer': 'contours',
+        minzoom: CONTOUR_PBF_SOURCE_MINZOOM,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
+        filter: ['==', ['%', ['get', 'ele'], 100], 0],
+        paint: {
+          'line-color': COLOURS.CONTOUR_INDEX,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 14, 0.5],
+          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.5, 14, 2.0],
+        },
+      },
+      {
+        // Contour labels — on index lines only
+        // Units baked at build time by CONTOUR_PBF_UNITS
+        id: 'contour-labels',
+        type: 'symbol',
+        source: 'contour-source',
+        'source-layer': 'contours',
+        minzoom: CONTOUR_PBF_SOURCE_MINZOOM,
+        maxzoom: CONTOUR_LAYER_MAXZOOM,
+        filter: ['==', ['%', ['get', 'ele'], 100], 0],
+        layout: {
+          'symbol-placement': 'line',
+          'symbol-avoid-edges': true,
+          'text-rotation-alignment': 'map',
+          'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 14, 12],
+          'text-field': labelExpr,
+          'text-font': ['Noto Sans Regular'],
+          'text-padding': 0,
+        },
+        paint: {
+          'text-color': COLOURS.CONTOUR_LABEL,
+          'text-halo-color': COLOURS.CONTOUR_HALO,
+          'text-halo-width': 1.25,
+        },
+      },
+    )
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 4. Waymarked Trails
   // ═══════════════════════════════════════════════════════════════════════
   for (const activity of WAYMARKED_ACTIVITIES) {
     const sourceId = `waymarked-${activity}`
@@ -279,7 +399,7 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 4. Activity overlays (inserted before poi_r20)
+  // 5. Activity overlays (inserted before poi_r20)
   // ═══════════════════════════════════════════════════════════════════════
   if (MTB_SCALE) {
     const mtbLayer = {
@@ -348,7 +468,7 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 5. Path & trail styling
+  // 6. Path & trail styling
   // ═══════════════════════════════════════════════════════════════════════
   if (PROMOTE_PATHS) {
     const pathLayer = style.layers.find(l => l.id === 'road_path_pedestrian')

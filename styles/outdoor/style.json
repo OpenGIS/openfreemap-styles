@@ -15,11 +15,11 @@
     },
     "contour-source": {
       "type": "vector",
-      "minzoom": 12,
+      "minzoom": 9,
       "tiles": [
-        "dem-contour://{z}/{x}/{y}?buffer=1&contourLayer=contours&elevationKey=ele&extent=4096&levelKey=level&thresholds=0*100*500~5*50*250~10*25*100~15*25*100"
+        "https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf"
       ],
-      "maxzoom": 20
+      "maxzoom": 12
     }
   },
   "sprite": "https://__TILEJSON_DOMAIN__/sprites/ofm_f384/ofm",
@@ -6058,13 +6058,17 @@
       "type": "line",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 12,
+      "minzoom": 9,
       "maxzoom": 20,
       "filter": [
-        "==",
+        "!=",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],
@@ -6104,13 +6108,17 @@
       "type": "line",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 12,
+      "minzoom": 9,
       "maxzoom": 20,
       "filter": [
-        ">",
+        "==",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],
@@ -6150,13 +6158,17 @@
       "type": "symbol",
       "source": "contour-source",
       "source-layer": "contours",
-      "minzoom": 12,
+      "minzoom": 9,
       "maxzoom": 20,
       "filter": [
-        ">",
+        "==",
         [
-          "get",
-          "level"
+          "%",
+          [
+            "get",
+            "ele"
+          ],
+          100
         ],
         0
       ],
@@ -6182,12 +6194,19 @@
           [
             "number-format",
             [
-              "get",
-              "ele"
+              "round",
+              [
+                "*",
+                [
+                  "get",
+                  "ele"
+                ],
+                3.28084
+              ]
             ],
             {}
           ],
-          "m"
+          "ft"
         ],
         "text-font": [
           "Noto Sans Regular"

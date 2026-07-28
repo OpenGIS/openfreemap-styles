@@ -27,15 +27,15 @@ Running `npm run dev` starts Vite (HMR on `style.json`) alongside `scripts/watch
 
 ## Contours
 
-The outdoor style includes contour lines. Two modes are available at build time:
+The outdoor style includes contour lines. Toggle between two implementations
+via `CONTOURS_USE_PLUGIN` in `scripts/build.mjs`:
 
-> [!NOTE]
-> **Units:** Contours are currently metric-only (metre elevations, labels display `m`). To support imperial (feet), a runtime `multiplier` option (e.g. `3.28084`) and alternate label suffix (`ft`) would need to be added to the maplibre-contour configuration — planned for a future update.
+| Toggle | Approach | Unit support |
+|--------|----------|-------------|
+| `CONTOURS_USE_PLUGIN = true` (default) | **Plugin** — client-side [maplibre-contour](https://github.com/onthegomap/maplibre-contour) generates contours on the GPU from raw DEM tiles | Runtime via `setupContours(style, 'imperial')` in `dev/map.js` |
+| `CONTOURS_USE_PLUGIN = false` | **PBF** — server-generated vector tiles (TrailSplits API or local contour-mvt-server) | Build-time via `CONTOUR_PBF_UNITS` constant in `build.mjs` |
 
-- **PBF** (default) — direct vector tiles from a local [contour-mvt-server](https://github.com/acalcutt/contour-mvt-server). Run `contours/` separately on port 11001.
-- **Plugin** — client-side contours via the [maplibre-contour](https://github.com/onthegomap/maplibre-contour) plugin. Set `CONTOURS = 'plugin'` in `scripts/build.mjs` within the outdoor sub-project.
-
-See [contours/README.md](contours/README.md) for server setup.
+See [CONTOURS_PBF.md](CONTOURS_PBF.md) for PBF-specific limitations and setup.
 
 ## Dependencies
 
