@@ -112,13 +112,13 @@ const CONTOUR_PLUGIN_PROTOCOL_ID = 'dem'  // Must match DemSource.setupMaplibre(
 // Source-layer: 'contours'.
 //
 // TrailSplits API (free, no key — caps at z12):
-const CONTOUR_PBF_TILE_URL =
-   'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
+// const CONTOUR_PBF_TILE_URL = 'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
 // Local contour-mvt-server (self-hosted, goes to z14):
-// const CONTOUR_PBF_TILE_URL = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+const CONTOUR_PBF_TILE_URL = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
 
 const CONTOUR_PBF_SOURCE_MINZOOM = 9
-const CONTOUR_PBF_SOURCE_MAXZOOM = 12  // TrailSplits caps at z12; local server goes to z14
+const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_TILE_URL.includes('localhost') ? 14 : 12
+// TrailSplits caps at z12; local server (localhost) goes to z14 — auto-detected
 
 // PBF labels always use metric at build time. For imperial units, the
 // runtime scripts/contours.js patches the label expression before the
