@@ -26,15 +26,31 @@ const libertyStyle = resolve(__dirname, '..', '..', '..', 'styles', 'liberty', '
 let timeout = null
 const DEBOUNCE_MS = 200
 
+// ── Build-in-progress guard ──
+// Prevents the child node process (which reads build.mjs at startup) from
+// re-triggering the watcher and creating an infinite loop. The debounce
+// only groups events within 200ms, but the build takes ~1s — the child
+// process's file access arrives well after the debounce window.
+
+let isBuilding = false
+
 function runBuild() {
   if (timeout) clearTimeout(timeout)
   timeout = setTimeout(() => {
     timeout = null
+    if (isBuilding) return
+    isBuilding = true
     const child = spawn('node', [buildScript], {
       stdio: 'inherit',
       cwd: resolve(__dirname, '..'),
     })
-    child.on('error', (err) => console.error('[watch] build failed:', err.message))
+    child.on('error', (err) => {
+      console.error('[watch] build failed:', err.message)
+      isBuilding = false
+    })
+    child.on('exit', () => {
+      isBuilding = false
+    })
   }, DEBOUNCE_MS)
 }
 

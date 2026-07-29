@@ -145,7 +145,7 @@ const POI_REMOTE_URL = 'https://api.trailsplits.com/tiles/v1/outdoor-pois/curren
 const POI_TILE_URL = POI_USE_LOCAL ? POI_LOCAL_URL : POI_REMOTE_URL
 
 const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 12 : 12
-const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 16 : 14
+const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 18 : 14
 
 // ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
 // Outdoor-relevant POI classes from the OpenMapTiles `poi` source-layer
