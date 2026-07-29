@@ -152,7 +152,7 @@ const CONTOUR_LAYER_MAXZOOM = 20
 const TRAILSPLITS_HIKING_URL = 'https://api.trailsplits.com/tiles/v1/hiking-network/current/{z}/{x}/{y}.pbf'
 const TRAILSPLITS_POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
 const TRAILSPLITS_OUTDOOR_POI_MINZOOM = 12
-const TRAILSPLITS_OUTDOOR_POI_MAXZOOM = 14
+const TRAILSPLITS_OUTDOOR_POI_MAXZOOM = 16
 const TRAILSPLITS_POI_URL = POI_USE_LOCAL
   ? TRAILSPLITS_POI_LOCAL_URL
   : 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'

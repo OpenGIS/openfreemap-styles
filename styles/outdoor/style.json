@@ -45,7 +45,7 @@
         "http://localhost:11002/{z}/{x}/{y}.pbf"
       ],
       "minzoom": 12,
-      "maxzoom": 14,
+      "maxzoom": 16,
       "attribution": "© TrailSplits"
     }
   },

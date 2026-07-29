@@ -83,6 +83,7 @@ function build() {
     'generate-custom',
     `--schema="${SCHEMA_PATH}"`,
     `--output="${OUTPUT_PATH}"`,
+    '--maxzoom=16',
     '--download',
     `--bounds=${bounds}`,
     '--quiet',
