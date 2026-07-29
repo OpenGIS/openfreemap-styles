@@ -33,8 +33,8 @@ const outdoorPath = resolve(ROOT, 'styles/outdoor/style.json')
 // ═════════════════════════════════════════════════════════════════════════
 // Flip these to enable/disable each feature section.
 
-const TERRAIN = false // 3D terrain hillshading (raster DEM)
-const CONTOURS_USE_PLUGIN = false // true = maplibre-contour plugin (GPU, client-side), false = PBF vector tiles (server)
+const TERRAIN = true // 3D terrain hillshading (raster DEM)
+const CONTOURS_USE_PLUGIN = true // true = maplibre-contour plugin (GPU, client-side), false = PBF vector tiles (server)
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
@@ -124,6 +124,16 @@ const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_TILE_URL.includes('localhost') ? 
 // runtime scripts/contours.js patches the label expression before the
 // map loads the style (both plugin and PBF modes are handled there).
 
+// ── Shared contour styling ― line widths ──────────────────────────────
+// Defined once and used by both plugin and PBF implementations below.
+// Tune zoom interpolation here rather than in each section separately.
+const CONTOUR_WIDTH_MINOR = ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0]
+const CONTOUR_WIDTH_INDEX = ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.7, 14, 1.1]
+
+// Opacity — same zoom interpolation for both implementations
+const CONTOUR_OPACITY_MINOR = ['interpolate', ['linear'], ['zoom'], 12, 0.4, 14, 0.5]
+const CONTOUR_OPACITY_INDEX = ['interpolate', ['linear'], ['zoom'], 12, 0.55, 14, 0.7]
+
 // ── Shared layer zoom limit ───────────────────────────────────────────
 // All contour layers stop rendering at this zoom. Kept independent of
 // the source maxzoom so the layer ceiling can be tuned for visual density
@@ -147,8 +157,8 @@ const COLOURS = {
   BICYCLE_ACCESS: '#8c64bd',
 
   // Contour lines & labels
-  CONTOUR_MINOR: 'rgb(200, 196, 190)',
-  CONTOUR_INDEX: 'rgb(100, 95, 90)',
+  CONTOUR_MINOR: 'rgb(190, 186, 180)',
+  CONTOUR_INDEX: 'rgb(180, 175, 170)',
   CONTOUR_LABEL: '#4a4a4a',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 }
@@ -247,8 +257,8 @@ function build() {
         filter: ['==', ['get', 'level'], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.2, 14, 0.3],
-          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0],
+          'line-opacity': CONTOUR_OPACITY_MINOR,
+          'line-width': CONTOUR_WIDTH_MINOR,
         },
       },
       {
@@ -262,8 +272,8 @@ function build() {
         filter: ['>', ['get', 'level'], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 14, 0.5],
-          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.5, 14, 2.0],
+          'line-opacity': CONTOUR_OPACITY_INDEX,
+          'line-width': CONTOUR_WIDTH_INDEX,
         },
       },
       {
@@ -330,8 +340,8 @@ function build() {
         filter: ['!=', ['%', ['get', 'ele'], 100], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_MINOR,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.2, 14, 0.3],
-          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 0.5, 14, 1.0],
+          'line-opacity': CONTOUR_OPACITY_MINOR,
+          'line-width': CONTOUR_WIDTH_MINOR,
         },
       },
       {
@@ -345,8 +355,8 @@ function build() {
         filter: ['==', ['%', ['get', 'ele'], 100], 0],
         paint: {
           'line-color': COLOURS.CONTOUR_INDEX,
-          'line-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.35, 14, 0.5],
-          'line-width': ['interpolate', ['exponential', 1.2], ['zoom'], 12, 1.5, 14, 2.0],
+          'line-opacity': CONTOUR_OPACITY_INDEX,
+          'line-width': CONTOUR_WIDTH_INDEX,
         },
       },
       {
