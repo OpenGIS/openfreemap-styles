@@ -21,7 +21,7 @@ Opens the compare app at [localhost:11000](http://localhost:11000) — Liberty o
 | `npm run demo:build`   | Build the compare app demo to `demo/` (`vite build`)        |
 | `npm run demo:preview` | Preview the production build (`vite preview`)               |
 
-The build script (`scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, waymarked trail overlays, and TrailSplits overlays. Source URL toggles (`CONTOUR_PBF_USE_LOCAL`, `POI_USE_LOCAL`) switch between remote APIs and self-hosted tile servers.
+The build script (`scripts/build.mjs`) reads the Liberty base style, applies outdoor modifications, and writes `style.json`. Feature flags at the top of the script enable/disable sections — terrain, contours, path promotion, MTB scale, waymarked trail overlays, TrailSplits hiking network, and outdoor POIs. Source URL toggles (`CONTOUR_PBF_USE_LOCAL`, `POI_USE_LOCAL`) switch between remote APIs and self-hosted tile servers.
 
 Running `npm run dev` starts Vite (HMR on `style.json`) alongside `scripts/watch.mjs`, which watches `scripts/build.mjs` and `styles/liberty/style.json`. When either changes — e.g. you flip a feature flag — it runs the build automatically, and Vite pushes the updated `style.json` to the browser. No manual build step, no extra terminal tab.
 
@@ -38,18 +38,27 @@ via `CONTOURS_USE_PLUGIN` in `scripts/build.mjs`:
 
 See [CONTOURS_PBF.md](CONTOURS_PBF.md) for PBF-specific limitations and setup.
 
-## TrailSplits overlays
+## TrailSplits hiking network
 
-Vector tile overlays from the free [TrailSplits API](https://trailsplits.com/api) (no key required) or self-hosted alternatives:
+Vector tile overlay from the free [TrailSplits API](https://trailsplits.com/api) (no key required):
 
 | Toggle | Description | Source-layer | Features |
 |--------|-------------|-------------|----------|
 | `TRAILSPLITS_HIKING_TRAILS` | Hiking/cycling trail networks | `hiking_network` | Line layers coloured by network tier — `iwn` (red), `nwn` (blue), `rwn` (green), `lwn`/default (grey) |
-| `TRAILSPLITS_OUTDOOR_POI` | Outdoor points of interest | `outdoor_pois` | Symbol markers for huts, water sources, shelters, parking, viewpoints, passes |
 
-Both default to `true`. The POI source URL is controlled by `POI_USE_LOCAL`:
-- `POI_USE_LOCAL = false` (default) — TrailSplits API
-- `POI_USE_LOCAL = true` — self-hosted [Planetiler tiles](pois/) on port 11002
+Default: `true`.
+
+## Outdoor POIs
+
+Vector tile overlay of outdoor points of interest, sourced from either the free [TrailSplits API](https://trailsplits.com/api) or self-hosted [Planetiler tiles](pois/):
+
+| Toggle | Description | Source-layer | Features |
+|--------|-------------|-------------|----------|
+| `OUTDOOR_POI` | Outdoor points of interest | `outdoor_pois` | Symbol markers for huts, water sources, shelters, parking, viewpoints, passes |
+
+Default: `true`. Source controlled by `POI_USE_LOCAL`:
+- `POI_USE_LOCAL = false` — TrailSplits API (z12–14)
+- `POI_USE_LOCAL = true` (default) — self-hosted Planetiler tiles (z8–16)
 
 The PBF contour source URL is controlled by `CONTOUR_PBF_USE_LOCAL` (see [Contours](#contours)).
 

@@ -12,7 +12,7 @@
  * changing any section logic — see the commented alternatives.
  *
  * Sections are ordered from bottom to top in the render stack:
- *   terrain → contours → waymarked trails → trailsplits overlays → mtb/bicycle → path styling
+ *   terrain → contours → waymarked trails → trailsplits hiking network → promoted liberty pois → outdoor pois → mtb/bicycle → path styling
  *
  * Usage:
  *   node scripts/build.mjs           # one-shot build
@@ -38,11 +38,12 @@ const CONTOURS_USE_PLUGIN = true // true = maplibre-contour plugin (GPU, client-
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
-const TRAILSPLITS_HIKING_TRAILS = true // TrailSplits hiking network overlay (vector tiles)
-const TRAILSPLITS_OUTDOOR_POI = true // TrailSplits outdoor POIs overlay (vector tiles)
+const TRAILSPLITS_HIKING_TRAILS = false // TrailSplits hiking network overlay (vector tiles)
+const OUTDOOR_POI = false // Outdoor POIs overlay (vector tiles)
+const PROMOTE_LIBERTY_POI = true // Promote selected liberty POIs to lower zoom
 const TRAILSPLITS_HIKING_MINZOOM = 8 // Minzoom for all TrailSplits hiking trail layers
 const CONTOUR_PBF_USE_LOCAL = true  // true = self-hosted contour-mvt-server, false = TrailSplits API
-const POI_USE_LOCAL = true         // true = self-hosted Planetiler tiles, false = TrailSplits API
+const POI_USE_LOCAL = false         // true = self-hosted Planetiler tiles, false = TrailSplits API
 
 // ═════════════════════════════════════════════════════════════════════════
 // Data source URLs
@@ -130,6 +131,35 @@ const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_USE_LOCAL ? 14 : 12
 // runtime scripts/contours.js patches the label expression before the
 // map loads the style (both plugin and PBF modes are handled there).
 
+// ── Outdoor POI tiles ───────────────────────────────────────────────────
+// Vector tiles with outdoor points of interest (POIs) — huts, shelters,
+// water, parking, viewpoints, mountain passes, campsites, etc.
+// Source-layer: 'outdoor_pois'.
+//
+// Switched via POI_USE_LOCAL toggle:
+//   true  → self-hosted Planetiler tiles (z8–16, wider zoom range)
+//   false → TrailSplits API (free, no key — z12–14)
+const POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
+const POI_REMOTE_URL = 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'
+
+const POI_TILE_URL = POI_USE_LOCAL ? POI_LOCAL_URL : POI_REMOTE_URL
+
+const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 8 : 12
+const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 16 : 14
+
+// ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
+// Outdoor-relevant POI classes from the OpenMapTiles `poi` source-layer
+// that should become visible earlier (z12–14) rather than waiting for z15.
+const PROMOTED_POI_MINZOOM = 12
+const PROMOTED_POI_MAXZOOM = 15  // stops where regular poi_r1 begins
+const PROMOTED_POI_CLASSES = [
+  'restaurant', 'cafe', 'fast_food', 'pub', 'bar', 'grocery', 'ice_cream',
+  'toilets', 'drinking_water', 'information', 'shelter', 'picnic_site',
+  'parking', 'bus', 'ferry', 'fuel',
+  'pharmacy', 'hospital', 'doctors', 'bank', 'atm', 'post',
+  'lodging', 'campsite',
+]
+
 // ── Shared contour styling ― line widths ──────────────────────────────
 // Defined once and used by both plugin and PBF implementations below.
 // Tune zoom interpolation here rather than in each section separately.
@@ -146,16 +176,10 @@ const CONTOUR_OPACITY_INDEX = ['interpolate', ['linear'], ['zoom'], 12, 0.55, 14
 // without affecting tile requests.
 const CONTOUR_LAYER_MAXZOOM = 20
 
-// ── TrailSplits overlays ───────────────────────────────────────────────
-// Vector tile overlays from the free TrailSplits API (no key required).
+// ── TrailSplits hiking network ─────────────────────────────────────────
+// Vector tile overlay from the free TrailSplits API (no key required).
 // Reference: https://trailsplits.com/api
 const TRAILSPLITS_HIKING_URL = 'https://api.trailsplits.com/tiles/v1/hiking-network/current/{z}/{x}/{y}.pbf'
-const TRAILSPLITS_POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
-const TRAILSPLITS_OUTDOOR_POI_MINZOOM = 12
-const TRAILSPLITS_OUTDOOR_POI_MAXZOOM = 16
-const TRAILSPLITS_POI_URL = POI_USE_LOCAL
-  ? TRAILSPLITS_POI_LOCAL_URL
-  : 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours
@@ -425,10 +449,10 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 5. TrailSplits overlays
+  // 5. TrailSplits hiking network
   // ═══════════════════════════════════════════════════════════════════════
-  // Vector tile overlays from the free TrailSplits API — hiking/cycling
-  // trail networks and outdoor points of interest.
+  // Vector tile overlay from the free TrailSplits API — hiking/cycling
+  // trail networks.
   // Reference: https://trailsplits.com/api
 
   if (TRAILSPLITS_HIKING_TRAILS) {
@@ -509,19 +533,81 @@ function build() {
     )
   }
 
-  if (TRAILSPLITS_OUTDOOR_POI) {
-    style.sources['trailsplits-poi'] = {
+  // ═══════════════════════════════════════════════════════════════════════
+  // 6. Promoted liberty POIs — outdoor-relevant POIs at lower zoom
+  // ═══════════════════════════════════════════════════════════════════════
+  // Promotes selected POI classes from the OpenMapTiles `poi` source-layer
+  // (toilets, restaurants, pubs, grocery stores, etc.) so they appear at
+  // z12–14 instead of waiting for the regular poi_r1 layer at z15.
+  //
+  // Uses the same dynamic icon mapping as the base style — the POI `class`
+  // value determines the sprite icon. Only outdoor-relevant classes are
+  // included to keep the map readable at low zoom.
+  //
+  // Splice-inserted near the existing POI layers so it renders in the same
+  // stack position as the original POI layers.
+
+  if (PROMOTE_LIBERTY_POI) {
+    const promotedLayer = {
+      id: 'poi-outdoor-promoted',
+      type: 'symbol',
+      source: 'openmaptiles',
+      'source-layer': 'poi',
+      minzoom: PROMOTED_POI_MINZOOM,
+      maxzoom: PROMOTED_POI_MAXZOOM,
+      filter: [
+        'all',
+        ['match', ['geometry-type'], ['MultiPoint', 'Point'], true, false],
+        ['match', ['get', 'class'], PROMOTED_POI_CLASSES, true, false],
+      ],
+      layout: {
+        'icon-image': [
+          'match',
+          ['get', 'subclass'],
+          ['florist', 'furniture'],
+          ['get', 'subclass'],
+          ['get', 'class'],
+        ],
+        'icon-size': 1,
+        'text-field': '', // no labels at low zoom to avoid clutter
+      },
+      paint: {
+        'icon-opacity': 0.85,
+      },
+    }
+
+    const poiIdx = style.layers.findIndex(l => l.id === 'poi_r20')
+    if (poiIdx !== -1) {
+      style.layers.splice(poiIdx, 0, promotedLayer)
+    } else {
+      style.layers.push(promotedLayer)
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 7. Outdoor POIs (external vector tiles)
+  // ═══════════════════════════════════════════════════════════════════════
+  // Vector tiles with outdoor points of interest (POIs) — huts,
+  // shelters, water, parking, viewpoints, mountain passes, etc.
+  // Source-layer: 'outdoor_pois'.
+  //
+  // Switched via OUTDOOR_POI toggle. Source controlled by POI_USE_LOCAL:
+  //   true  → self-hosted Planetiler tiles (z8–16)
+  //   false → TrailSplits API (z12–14)
+
+  if (OUTDOOR_POI) {
+    style.sources['outdoor-poi'] = {
       type: 'vector',
-      tiles: [TRAILSPLITS_POI_URL],
-      minzoom: TRAILSPLITS_OUTDOOR_POI_MINZOOM,
-      maxzoom: TRAILSPLITS_OUTDOOR_POI_MAXZOOM,
-      attribution: '© TrailSplits',
+      tiles: [POI_TILE_URL],
+      minzoom: POI_SOURCE_MINZOOM,
+      maxzoom: POI_SOURCE_MAXZOOM,
+      attribution: POI_USE_LOCAL ? '© OpenStreetMap contributors' : '© TrailSplits',
     }
 
     style.layers.push({
-      id: 'trailsplits-poi',
+      id: 'outdoor-poi',
       type: 'symbol',
-      source: 'trailsplits-poi',
+      source: 'outdoor-poi',
       'source-layer': 'outdoor_pois',
       layout: {
           'icon-image': [
@@ -572,7 +658,7 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 6. Activity overlays (inserted before poi_r20)
+  // 8. Activity overlays (inserted before poi_r20)
   // ═══════════════════════════════════════════════════════════════════════
   if (MTB_SCALE) {
     const mtbLayer = {
@@ -641,7 +727,7 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 7. Path & trail styling
+  // 9. Path & trail styling
   // ═══════════════════════════════════════════════════════════════════════
   if (PROMOTE_PATHS) {
     const pathLayer = style.layers.find(l => l.id === 'road_path_pedestrian')

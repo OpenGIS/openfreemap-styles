@@ -59,7 +59,7 @@ The outdoor build script (`scripts/build.mjs`) uses the local URL when `POI_USE_
 
 ```js
 const POI_USE_LOCAL = true
-const TRAILSPLITS_POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
+const POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
 ```
 
 ## Stop
