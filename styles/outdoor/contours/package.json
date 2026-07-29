@@ -4,7 +4,6 @@
   "private": true,
   "description": "Self-hosted contour vector tile server for OpenFreeMap outdoor style",
   "scripts": {
-    "start": "contour-mvt-server config.json",
     "dev": "contour-mvt-server config.json"
   },
   "dependencies": {

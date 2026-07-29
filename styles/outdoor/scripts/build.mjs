@@ -42,7 +42,7 @@ const TRAILSPLITS_HIKING_TRAILS = true // TrailSplits hiking network overlay (ve
 const TRAILSPLITS_OUTDOOR_POI = true // TrailSplits outdoor POIs overlay (vector tiles)
 const TRAILSPLITS_HIKING_MINZOOM = 8 // Minzoom for all TrailSplits hiking trail layers
 const CONTOUR_PBF_USE_LOCAL = true  // true = self-hosted contour-mvt-server, false = TrailSplits API
-const POI_USE_LOCAL = false         // true = self-hosted Planetiler tiles, false = TrailSplits API
+const POI_USE_LOCAL = true         // true = self-hosted Planetiler tiles, false = TrailSplits API
 
 // ═════════════════════════════════════════════════════════════════════════
 // Data source URLs
@@ -152,6 +152,7 @@ const CONTOUR_LAYER_MAXZOOM = 20
 const TRAILSPLITS_HIKING_URL = 'https://api.trailsplits.com/tiles/v1/hiking-network/current/{z}/{x}/{y}.pbf'
 const TRAILSPLITS_POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
 const TRAILSPLITS_OUTDOOR_POI_MINZOOM = 12
+const TRAILSPLITS_OUTDOOR_POI_MAXZOOM = 14
 const TRAILSPLITS_POI_URL = POI_USE_LOCAL
   ? TRAILSPLITS_POI_LOCAL_URL
   : 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'
@@ -513,7 +514,7 @@ function build() {
       type: 'vector',
       tiles: [TRAILSPLITS_POI_URL],
       minzoom: TRAILSPLITS_OUTDOOR_POI_MINZOOM,
-      maxzoom: 14,
+      maxzoom: TRAILSPLITS_OUTDOOR_POI_MAXZOOM,
       attribution: '© TrailSplits',
     }
 
@@ -527,11 +528,20 @@ function build() {
             'match',
             ['get', 'kind'],
             'water', 'drinking_water',
-            'hut', 'campsite',
+            'hut', 'lodging',
             'shelter', 'shelter',
             'parking', 'parking',
             'viewpoint', 'star_stroked',
             'pass', 'mountain',
+            'picnic_site', 'picnic_site',
+            'information', 'information',
+            'toilets', 'toilets',
+            'ranger_station', 'ranger_station',
+            'campsite', 'campsite',
+            'playground', 'playground',
+            'skiing', 'skiing',
+            'ferry', 'ferry',
+            'bicycle', 'bicycle_rental',
             'bus_stop', 'bus',
             'cable_car', 'aerialway',
             'halt', 'railway',

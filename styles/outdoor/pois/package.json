@@ -1,0 +1,16 @@
+{
+  "name": "openfreemap-outdoor-pois",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Planetiler-based outdoor POI vector tiles for OpenFreeMap outdoor style",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node server.mjs"
+  },
+  "dependencies": {
+    "pmtiles": "^4.3.0"
+  },
+  "devDependencies": {
+    "@mapbox/vector-tile": "^3.0.0"
+  }
+}

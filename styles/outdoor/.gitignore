@@ -1,1 +1,8 @@
+.DS_Store
 node_modules
+package-lock.json
+
+# POI tiles (Planetiler)
+pois/outdoor_pois.pmtiles
+pois/.planetiler/
+pois/data/
