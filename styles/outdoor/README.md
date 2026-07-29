@@ -50,7 +50,7 @@ Default: `true`.
 
 ## Outdoor POIs
 
-Vector tile overlay of outdoor points of interest, sourced from either the free [TrailSplits API](https://trailsplits.com/api) or self-hosted [Planetiler tiles](pois/):
+Vector tile overlay of outdoor points of interest, sourced from either the free [TrailSplits API](https://trailsplits.com/api) or self-hosted [Planetiler tiles](features/):
 
 | Toggle | Description | Source-layer | Features |
 |--------|-------------|-------------|----------|
@@ -60,20 +60,31 @@ Default: `true`. Source controlled by `POI_USE_LOCAL`:
 - `POI_USE_LOCAL = false` — TrailSplits API (z12–14)
 - `POI_USE_LOCAL = true` (default) — self-hosted Planetiler tiles (z8–16)
 
+## Outdoor routes
+
+Vector tile overlay of hiking route relations from OSM, self-hosted via [Planetiler](features/):
+
+| Toggle | Description | Source-layer | Features |
+|--------|-------------|-------------|----------|
+| `OUTDOOR_ROUTE` | Outdoor hiking routes | `outdoor_routes` | Line layers for iwn/nwn/rwn/lwn hiking routes |
+
+Default: `false` (opt-in). When enabled, routes are served from the self-hosted dev server.
+
 The PBF contour source URL is controlled by `CONTOUR_PBF_USE_LOCAL` (see [Contours](#contours)).
 
-## Self-hosted POI tiles
+## Self-hosted feature tiles
 
-The `pois/` sub-project generates outdoor POI vector tiles from OSM data using [Planetiler](https://github.com/onthegomap/planetiler). This provides the same POI overlay as the TrailSplits API but self-hosted:
+The `features/` sub-project generates vector tiles from OSM data using [Planetiler](https://github.com/onthegomap/planetiler). Multiple schemas are supported — POIs, hiking routes, and others — each defined by a `schema.yml` in its own subdirectory. The Planetiler JAR cache and OSM extracts are shared across all schemas.
 
 ```bash
-cd pois
+cd features
 npm install                # one-time setup
-npm run build              # build .pmtiles (requires JDK 21+)
-npm start                  # serves tiles on port 11002
+npm run build              # build POI tiles (default)
+npm run build:routes       # build route tiles (requires JDK 21+)
+npm run dev                # serves all tiles on port 11002
 ```
 
-Set `POI_USE_LOCAL = true` in `scripts/build.mjs` to use local tiles instead of the TrailSplits API. See [pois/README.md](pois/README.md) for details.
+Set `POI_USE_LOCAL = true` / `OUTDOOR_ROUTE = true` in `scripts/build.mjs` to use local tiles. See [features/README.md](features/README.md) for details.
 
 ## Dependencies
 
@@ -87,7 +98,7 @@ Set `POI_USE_LOCAL = true` in `scripts/build.mjs` to use local tiles instead of 
 ```
 styles/outdoor/
 ├── contours/            # Self-hosted contour tile server
-├── pois/                # Self-hosted outdoor POI tile generator (Planetiler)
+├── features/            # Self-hosted feature tile generator (Planetiler) — pois, routes, etc.
 ├── index.html           # Compare app entry
 ├── dev/
 │   ├── App.vue          # Dev app root component

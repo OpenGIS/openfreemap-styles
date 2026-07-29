@@ -2,7 +2,8 @@
 node_modules
 package-lock.json
 
-# POI tiles (Planetiler)
-pois/outdoor_pois.pmtiles
-pois/.planetiler/
-pois/data/
+# Feature tiles (Planetiler)
+features/pois/outdoor_pois.pmtiles
+features/routes/outdoor_routes.pmtiles
+features/.planetiler/
+features/data/

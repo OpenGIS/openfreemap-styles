@@ -12,7 +12,7 @@
  * changing any section logic — see the commented alternatives.
  *
  * Sections are ordered from bottom to top in the render stack:
- *   terrain → contours → waymarked trails → trailsplits hiking network → promoted liberty pois → outdoor pois → mtb/bicycle → path styling
+ *   terrain → contours → waymarked trails → trailsplits hiking network → promoted liberty pois → outdoor pois → outdoor routes → mtb/bicycle → path styling
  *
  * Usage:
  *   node scripts/build.mjs           # one-shot build
@@ -139,13 +139,24 @@ const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_USE_LOCAL ? 14 : 12
 // Switched via POI_USE_LOCAL toggle:
 //   true  → self-hosted Planetiler tiles (z8–16, wider zoom range)
 //   false → TrailSplits API (free, no key — z12–14)
-const POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
+const POI_LOCAL_URL = 'http://localhost:11002/pois/{z}/{x}/{y}.pbf'
 const POI_REMOTE_URL = 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'
 
 const POI_TILE_URL = POI_USE_LOCAL ? POI_LOCAL_URL : POI_REMOTE_URL
 
 const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 12 : 12
 const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 18 : 14
+
+// ── Outdoor route tiles ──────────────────────────────────────────────────
+// Vector tiles with hiking route relations (type=route, route=hiking)
+// from OSM. Self-hosted Planetiler tiles with line geometry.
+// Source-layer: 'outdoor_routes'.
+//
+// Only local hosting — no remote route API available yet.
+const OUTDOOR_ROUTE = true          // Hiking route overlay (self-hosted Planetiler tiles)
+const ROUTE_LOCAL_URL = 'http://localhost:11002/routes/{z}/{x}/{y}.pbf'
+const ROUTE_SOURCE_MINZOOM = 8
+const ROUTE_SOURCE_MAXZOOM = 9   // Planetiler only emits line features at z8–9 in custom schema mode
 
 // ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
 // Outdoor-relevant POI classes from the OpenMapTiles `poi` source-layer
@@ -659,7 +670,95 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 8. Activity overlays (inserted before poi_r20)
+  // 8. Outdoor routes (hiking route relations)
+  // ═══════════════════════════════════════════════════════════════════════
+  // Vector tiles with hiking route relations from OSM — line geometry
+  // with network classification (iwn/nwn/rwn/lwn), ref, name, etc.
+  // Source-layer: 'outdoor_routes'.
+  //
+  // Colours and widths match the TrailSplits hiking network scheme
+  // for visual consistency within the style.
+
+  if (OUTDOOR_ROUTE) {
+    style.sources['outdoor-route'] = {
+      type: 'vector',
+      tiles: [ROUTE_LOCAL_URL],
+      minzoom: ROUTE_SOURCE_MINZOOM,
+      maxzoom: ROUTE_SOURCE_MAXZOOM,
+      attribution: '© OpenStreetMap contributors',
+    }
+
+    style.layers.push(
+      {
+        id: 'outdoor-route-iwn',
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': 'outdoor_routes',
+        minzoom: 8,
+        filter: ['==', ['get', 'network'], 'iwn'],
+        paint: {
+          'line-color': '#e31a1c',
+          'line-opacity': 0.6,
+          'line-width': 2.5,
+        },
+      },
+      {
+        id: 'outdoor-route-nwn',
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': 'outdoor_routes',
+        minzoom: 8,
+        filter: ['==', ['get', 'network'], 'nwn'],
+        paint: {
+          'line-color': '#1f78b4',
+          'line-opacity': 0.6,
+          'line-width': 2,
+        },
+      },
+      {
+        id: 'outdoor-route-rwn',
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': 'outdoor_routes',
+        minzoom: 10,
+        filter: ['==', ['get', 'network'], 'rwn'],
+        paint: {
+          'line-color': '#33a02c',
+          'line-opacity': 0.6,
+          'line-width': 1.5,
+        },
+      },
+      {
+        id: 'outdoor-route-lwn',
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': 'outdoor_routes',
+        minzoom: 12,
+        filter: ['==', ['get', 'network'], 'lwn'],
+        paint: {
+          'line-color': '#b2b2b2',
+          'line-opacity': 0.5,
+          'line-width': 1,
+        },
+      },
+      {
+        id: 'outdoor-route-default',
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': 'outdoor_routes',
+        minzoom: 12,
+        filter: ['!', ['has', 'network']],
+        paint: {
+          'line-color': '#b2b2b2',
+          'line-opacity': 0.5,
+          'line-width': 1,
+        },
+      },
+    )
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 9. Activity overlays (inserted before poi_r20)
   // ═══════════════════════════════════════════════════════════════════════
   if (MTB_SCALE) {
     const mtbLayer = {

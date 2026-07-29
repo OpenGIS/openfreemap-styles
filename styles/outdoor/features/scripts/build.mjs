@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Build outdoor POI vector tiles using Planetiler.
+ * Build outdoor feature vector tiles using Planetiler.
  *
  * Downloads the Planetiler JAR if not present, then runs
- * `generate-custom` with the YAML schema to produce a .pmtiles file.
+ * `generate-custom` with the YAML schema for a given feature
+ * (e.g. pois, routes) to produce a .pmtiles file.
  *
  * Usage:
- *   node scripts/build.mjs
- *   node scripts/build.mjs --bounds=10.48,45.27,11.78,46.18
+ *   node scripts/build.mjs                     # default: pois
+ *   node scripts/build.mjs --feature=routes
+ *   node scripts/build.mjs --feature=pois --bounds=10.48,45.27,11.78,46.18
  */
 
 import { execSync } from 'node:child_process'
@@ -20,18 +22,25 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 const JAR_DIR = resolve(ROOT, '.planetiler')
 const JAR_PATH = resolve(JAR_DIR, 'planetiler.jar')
-const SCHEMA_PATH = resolve(ROOT, 'schema.yml')
-const OUTPUT_PATH = resolve(ROOT, 'outdoor_pois.pmtiles')
 
 const PLANETILER_DOWNLOAD_URL =
   'https://github.com/onthegomap/planetiler/releases/latest/download/planetiler.jar'
 
 // Default bounds — Venetian Prealps, NE Italy (~50km around 45.723, 11.128)
 const DEFAULT_BOUNDS = '10.48,45.27,11.78,46.18'
+const DEFAULT_FEATURE = 'pois'
+
+function getArg(name, fallback) {
+  const arg = process.argv.find(a => a.startsWith(`--${name}=`))
+  return arg ? arg.split('=')[1] : fallback
+}
+
+function getFeature() {
+  return getArg('feature', DEFAULT_FEATURE)
+}
 
 function getBounds() {
-  const arg = process.argv.find(a => a.startsWith('--bounds='))
-  return arg ? arg.split('=')[1] : DEFAULT_BOUNDS
+  return getArg('bounds', DEFAULT_BOUNDS)
 }
 
 function checkJava() {
@@ -72,17 +81,28 @@ function downloadJar() {
 }
 
 function build() {
+  const feature = getFeature()
   const bounds = getBounds()
-  console.log(`  schema: ${SCHEMA_PATH}`)
-  console.log(`  output: ${OUTPUT_PATH}`)
-  console.log(`  bounds: ${bounds}`)
+  const schemaPath = resolve(ROOT, feature, 'schema.yml')
+  const outputPath = resolve(ROOT, feature, `outdoor_${feature}.pmtiles`)
+
+  if (!existsSync(schemaPath)) {
+    console.error(`✗ Schema not found at ${schemaPath}`)
+    console.error(`  Valid features: pois, routes`)
+    process.exit(1)
+  }
+
+  console.log(`  feature: ${feature}`)
+  console.log(`  schema:  ${schemaPath}`)
+  console.log(`  output:  ${outputPath}`)
+  console.log(`  bounds:  ${bounds}`)
   console.log()
 
   const cmd = [
     `java -jar "${JAR_PATH}"`,
     'generate-custom',
-    `--schema="${SCHEMA_PATH}"`,
-    `--output="${OUTPUT_PATH}"`,
+    `--schema="${schemaPath}"`,
+    `--output="${outputPath}"`,
     '--maxzoom=16',
     '--download',
     `--bounds=${bounds}`,
@@ -91,14 +111,15 @@ function build() {
 
   try {
     execSync(cmd, { stdio: 'inherit', timeout: 600_000 })
-    console.log(`\n✓ Outdoor POI tiles written to ${OUTPUT_PATH}`)
+    console.log(`\n✓ Outdoor ${feature} tiles written to ${outputPath}`)
   } catch (err) {
-    console.error('\n✗ Planetiler build failed:', err.message)
+    console.error(`\n✗ Planetiler build failed for ${feature}:`, err.message)
     process.exit(1)
   }
 }
 
-console.log('═══ Outdoor POI Planetiler Build ═══')
+const feature = getFeature()
+console.log(`═══ Outdoor ${feature} Planetiler Build ═══`)
 console.log()
 checkJava()
 downloadJar()

@@ -1,0 +1,47 @@
+schema_name: OpenFreeMap Outdoor Routes
+schema_description: Outdoor hiking route relations (hiking, foot, walking) for the OpenFreeMap outdoor style
+attribution: <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>
+version: 1.0.0
+is_overlay: true
+
+sources:
+  osm:
+    type: osm
+    url: geofabrik:italy
+
+layers:
+  - id: outdoor_routes
+    features:
+      # ── Hiking routes ──────────────────────────────────────────────
+      # OSM relations with type=route and route=hiking|foot|walking.
+      # Network tag determines hierarchy: iwn (international), nwn
+      # (national), rwn (regional), lwn (local).
+      - source: osm
+        geometry: line
+        min_zoom: 8
+        include_when:
+          type: [route, superroute]
+          route: [hiking, foot, walking]
+        attributes:
+          - key: kind
+            value: hiking
+          - key: name
+            tag_value: name
+          - key: ref
+            tag_value: ref
+          - key: network
+            tag_value: network
+          - key: osmc_symbol
+            tag_value: osmc:symbol
+          - key: operator
+            tag_value: operator
+          - key: distance
+            tag_value: distance
+          - key: ascent
+            tag_value: ascent
+          - key: descent
+            tag_value: descent
+          - key: cai_scale
+            tag_value: cai_scale
+          - key: roundtrip
+            tag_value: roundtrip
