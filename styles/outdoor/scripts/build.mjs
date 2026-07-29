@@ -12,7 +12,7 @@
  * changing any section logic — see the commented alternatives.
  *
  * Sections are ordered from bottom to top in the render stack:
- *   terrain → contours → waymarked trails → mtb/bicycle → path styling
+ *   terrain → contours → waymarked trails → trailsplits overlays → mtb/bicycle → path styling
  *
  * Usage:
  *   node scripts/build.mjs           # one-shot build
@@ -38,6 +38,11 @@ const CONTOURS_USE_PLUGIN = true // true = maplibre-contour plugin (GPU, client-
 const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
+const TRAILSPLITS_HIKING_TRAILS = true // TrailSplits hiking network overlay (vector tiles)
+const TRAILSPLITS_OUTDOOR_POI = true // TrailSplits outdoor POIs overlay (vector tiles)
+const TRAILSPLITS_HIKING_MINZOOM = 8 // Minzoom for all TrailSplits hiking trail layers
+const CONTOUR_PBF_USE_LOCAL = true  // true = self-hosted contour-mvt-server, false = TrailSplits API
+const POI_USE_LOCAL = false         // true = self-hosted Planetiler tiles, false = TrailSplits API
 
 // ═════════════════════════════════════════════════════════════════════════
 // Data source URLs
@@ -111,14 +116,15 @@ const CONTOUR_PLUGIN_PROTOCOL_ID = 'dem'  // Must match DemSource.setupMaplibre(
 // Each feature has 'ele' (elevation in metres) and 'level' fields.
 // Source-layer: 'contours'.
 //
-// TrailSplits API (free, no key — caps at z12):
-// const CONTOUR_PBF_TILE_URL = 'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
-// Local contour-mvt-server (self-hosted, goes to z14):
-const CONTOUR_PBF_TILE_URL = 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+// Switched via CONTOUR_PBF_USE_LOCAL toggle:
+//   true  → self-hosted contour-mvt-server (goes to z14)
+//   false → TrailSplits API (free, no key — caps at z12)
+const CONTOUR_PBF_TILE_URL = CONTOUR_PBF_USE_LOCAL
+  ? 'http://localhost:11001/contours/terrain/{z}/{x}/{y}.pbf'
+  : 'https://api.trailsplits.com/tiles/v1/contours/current/{z}/{x}/{y}.pbf'
 
 const CONTOUR_PBF_SOURCE_MINZOOM = 9
-const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_TILE_URL.includes('localhost') ? 14 : 12
-// TrailSplits caps at z12; local server (localhost) goes to z14 — auto-detected
+const CONTOUR_PBF_SOURCE_MAXZOOM = CONTOUR_PBF_USE_LOCAL ? 14 : 12
 
 // PBF labels always use metric at build time. For imperial units, the
 // runtime scripts/contours.js patches the label expression before the
@@ -139,6 +145,16 @@ const CONTOUR_OPACITY_INDEX = ['interpolate', ['linear'], ['zoom'], 12, 0.55, 14
 // the source maxzoom so the layer ceiling can be tuned for visual density
 // without affecting tile requests.
 const CONTOUR_LAYER_MAXZOOM = 20
+
+// ── TrailSplits overlays ───────────────────────────────────────────────
+// Vector tile overlays from the free TrailSplits API (no key required).
+// Reference: https://trailsplits.com/api
+const TRAILSPLITS_HIKING_URL = 'https://api.trailsplits.com/tiles/v1/hiking-network/current/{z}/{x}/{y}.pbf'
+const TRAILSPLITS_POI_LOCAL_URL = 'http://localhost:11002/{z}/{x}/{y}.pbf'
+const TRAILSPLITS_OUTDOOR_POI_MINZOOM = 12
+const TRAILSPLITS_POI_URL = POI_USE_LOCAL
+  ? TRAILSPLITS_POI_LOCAL_URL
+  : 'https://api.trailsplits.com/tiles/v1/outdoor-pois/current/{z}/{x}/{y}.pbf'
 
 // ═════════════════════════════════════════════════════════════════════════
 // Colours
@@ -408,7 +424,145 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 5. Activity overlays (inserted before poi_r20)
+  // 5. TrailSplits overlays
+  // ═══════════════════════════════════════════════════════════════════════
+  // Vector tile overlays from the free TrailSplits API — hiking/cycling
+  // trail networks and outdoor points of interest.
+  // Reference: https://trailsplits.com/api
+
+  if (TRAILSPLITS_HIKING_TRAILS) {
+    style.sources['trailsplits-hiking'] = {
+      type: 'vector',
+      tiles: [TRAILSPLITS_HIKING_URL],
+      minzoom: 8,
+      maxzoom: 12,
+      attribution: '© TrailSplits',
+    }
+
+    style.layers.push(
+      {
+        id: 'trailsplits-hiking-iwn',
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['==', ['get', 'network'], 'iwn'],
+        paint: {
+          'line-color': '#e31a1c',
+          'line-opacity': 0.6,
+          'line-width': 2.5,
+        },
+      },
+      {
+        id: 'trailsplits-hiking-nwn',
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['==', ['get', 'network'], 'nwn'],
+        paint: {
+          'line-color': '#1f78b4',
+          'line-opacity': 0.6,
+          'line-width': 2,
+        },
+      },
+      {
+        id: 'trailsplits-hiking-rwn',
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['==', ['get', 'network'], 'rwn'],
+        paint: {
+          'line-color': '#33a02c',
+          'line-opacity': 0.6,
+          'line-width': 1.5,
+        },
+      },
+      {
+        id: 'trailsplits-hiking-lwn',
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['==', ['get', 'network'], 'lwn'],
+        paint: {
+          'line-color': '#b2b2b2',
+          'line-opacity': 0.5,
+          'line-width': 1,
+        },
+      },
+      {
+        id: 'trailsplits-hiking-default',
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['!', ['has', 'network']],
+        paint: {
+          'line-color': '#b2b2b2',
+          'line-opacity': 0.5,
+          'line-width': 1,
+        },
+      },
+    )
+  }
+
+  if (TRAILSPLITS_OUTDOOR_POI) {
+    style.sources['trailsplits-poi'] = {
+      type: 'vector',
+      tiles: [TRAILSPLITS_POI_URL],
+      minzoom: TRAILSPLITS_OUTDOOR_POI_MINZOOM,
+      maxzoom: 14,
+      attribution: '© TrailSplits',
+    }
+
+    style.layers.push({
+      id: 'trailsplits-poi',
+      type: 'symbol',
+      source: 'trailsplits-poi',
+      'source-layer': 'outdoor_pois',
+      layout: {
+          'icon-image': [
+            'match',
+            ['get', 'kind'],
+            'water', 'drinking_water',
+            'hut', 'campsite',
+            'shelter', 'shelter',
+            'parking', 'parking',
+            'viewpoint', 'star_stroked',
+            'pass', 'mountain',
+            'bus_stop', 'bus',
+            'cable_car', 'aerialway',
+            'halt', 'railway',
+            'station', 'railway',
+            'tram_stop', 'railway_light',
+            'guest_house', 'lodging',
+            'hotel', 'lodging',
+            'pub', 'bar',
+            'town', 'town_hall',
+            'village', 'town_hall',
+            'hamlet', 'town_hall',
+            'marker',
+          ],
+        'icon-size': 1,
+        'text-field': ['get', 'name'],
+        'text-size': 11,
+        'text-font': ['Noto Sans Regular'],
+        'text-offset': [0, 1.5],
+        'text-anchor': 'top',
+      },
+      paint: {
+        'text-color': '#333333',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1,
+        'icon-opacity': 0.85,
+      },
+    })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 6. Activity overlays (inserted before poi_r20)
   // ═══════════════════════════════════════════════════════════════════════
   if (MTB_SCALE) {
     const mtbLayer = {
@@ -477,7 +631,7 @@ function build() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 6. Path & trail styling
+  // 7. Path & trail styling
   // ═══════════════════════════════════════════════════════════════════════
   if (PROMOTE_PATHS) {
     const pathLayer = style.layers.find(l => l.id === 'road_path_pedestrian')

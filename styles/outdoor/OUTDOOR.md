@@ -54,6 +54,8 @@ https://github.com/tracestrack/pmtiles-contour-server
 
 Non-commercial
 
+"no API key or token. Requests are served over HTTPS with permissive CORS headers"
+
 Contours have a max-zoom 12 (overscrolls to 13)
 
 https://api.trailsplits.com/tiles/v1/contours/current/metadata.json
