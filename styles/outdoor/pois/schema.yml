@@ -207,3 +207,17 @@ layers:
             value: bicycle
           - key: name
             tag_value: name
+
+      # ── Trailhead ──────────────────────────────────────────────
+      - source: osm
+        geometry: point
+        min_zoom: 10
+        include_when:
+          highway: trailhead
+        attributes:
+          - key: kind
+            value: trailhead
+          - key: name
+            tag_value: name
+          - key: ele
+            tag_value: ele

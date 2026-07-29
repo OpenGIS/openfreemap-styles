@@ -39,11 +39,11 @@ const PROMOTE_PATHS = true // Paths/trails visible at all zoom levels
 const MTB_SCALE = false // MTB difficulty + bicycle access overlays
 const WAYMARKED_ACTIVITIES = [] // Raster overlays, e.g. ['hiking', 'cycling']
 const TRAILSPLITS_HIKING_TRAILS = false // TrailSplits hiking network overlay (vector tiles)
-const OUTDOOR_POI = false // Outdoor POIs overlay (vector tiles)
+const OUTDOOR_POI = true // Outdoor POIs overlay (vector tiles)
 const PROMOTE_LIBERTY_POI = true // Promote selected liberty POIs to lower zoom
 const TRAILSPLITS_HIKING_MINZOOM = 8 // Minzoom for all TrailSplits hiking trail layers
 const CONTOUR_PBF_USE_LOCAL = true  // true = self-hosted contour-mvt-server, false = TrailSplits API
-const POI_USE_LOCAL = false         // true = self-hosted Planetiler tiles, false = TrailSplits API
+const POI_USE_LOCAL = true         // true = self-hosted Planetiler tiles, false = TrailSplits API
 
 // ═════════════════════════════════════════════════════════════════════════
 // Data source URLs
@@ -144,7 +144,7 @@ const POI_REMOTE_URL = 'https://api.trailsplits.com/tiles/v1/outdoor-pois/curren
 
 const POI_TILE_URL = POI_USE_LOCAL ? POI_LOCAL_URL : POI_REMOTE_URL
 
-const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 8 : 12
+const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 12 : 12
 const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 16 : 14
 
 // ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
@@ -628,6 +628,7 @@ function build() {
             'skiing', 'skiing',
             'ferry', 'ferry',
             'bicycle', 'bicycle_rental',
+            'trailhead', 'entrance',
             'bus_stop', 'bus',
             'cable_car', 'aerialway',
             'halt', 'railway',
