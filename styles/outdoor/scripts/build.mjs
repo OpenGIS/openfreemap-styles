@@ -220,7 +220,27 @@ const COLOURS = {
   CONTOUR_INDEX: 'rgb(180, 175, 170)',
   CONTOUR_LABEL: '#4a4a4a',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
+
+  // Hiking route network tiers (shared by local & TrailSplits routes)
+  ROUTE_IWN: '#e31a1c',
+  ROUTE_NWN: '#1f78b4',
+  ROUTE_RWN: '#33a02c',
+  ROUTE_LWN: '#b2b2b2',
+  ROUTE_DEFAULT: '#b2b2b2',
 }
+
+// ── Route network tier paint configs ──────────────────────────────────
+// Shared by both outdoord-route-* and trailsplits-hiking-* sections.
+// Each tier has colour, opacity, width, and minzoom.
+
+const ROUTE_TIERS = {
+  iwn: { color: COLOURS.ROUTE_IWN, opacity: 0.6, width: 2.5, minzoom: 8 },
+  nwn: { color: COLOURS.ROUTE_NWN, opacity: 0.6, width: 2.0, minzoom: 8 },
+  rwn: { color: COLOURS.ROUTE_RWN, opacity: 0.6, width: 1.5, minzoom: 10 },
+  lwn: { color: COLOURS.ROUTE_LWN, opacity: 0.5, width: 1.0, minzoom: 12 },
+}
+
+const ROUTE_TIER_DEFAULT = { color: COLOURS.ROUTE_DEFAULT, opacity: 0.5, width: 1.0, minzoom: 12 }
 
 // ═════════════════════════════════════════════════════════════════════════
 // Helpers
@@ -482,59 +502,27 @@ function build() {
       attribution: '© TrailSplits',
     }
 
+    function makeTrailSplitLayer(network, tier) {
+      return {
+        id: `trailsplits-hiking-${network}`,
+        type: 'line',
+        source: 'trailsplits-hiking',
+        'source-layer': 'hiking_network',
+        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        filter: ['==', ['get', 'network'], network],
+        paint: {
+          'line-color': tier.color,
+          'line-opacity': tier.opacity,
+          'line-width': tier.width,
+        },
+      }
+    }
+
     style.layers.push(
-      {
-        id: 'trailsplits-hiking-iwn',
-        type: 'line',
-        source: 'trailsplits-hiking',
-        'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
-        filter: ['==', ['get', 'network'], 'iwn'],
-        paint: {
-          'line-color': '#e31a1c',
-          'line-opacity': 0.6,
-          'line-width': 2.5,
-        },
-      },
-      {
-        id: 'trailsplits-hiking-nwn',
-        type: 'line',
-        source: 'trailsplits-hiking',
-        'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
-        filter: ['==', ['get', 'network'], 'nwn'],
-        paint: {
-          'line-color': '#1f78b4',
-          'line-opacity': 0.6,
-          'line-width': 2,
-        },
-      },
-      {
-        id: 'trailsplits-hiking-rwn',
-        type: 'line',
-        source: 'trailsplits-hiking',
-        'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
-        filter: ['==', ['get', 'network'], 'rwn'],
-        paint: {
-          'line-color': '#33a02c',
-          'line-opacity': 0.6,
-          'line-width': 1.5,
-        },
-      },
-      {
-        id: 'trailsplits-hiking-lwn',
-        type: 'line',
-        source: 'trailsplits-hiking',
-        'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
-        filter: ['==', ['get', 'network'], 'lwn'],
-        paint: {
-          'line-color': '#b2b2b2',
-          'line-opacity': 0.5,
-          'line-width': 1,
-        },
-      },
+      makeTrailSplitLayer('iwn', ROUTE_TIERS.iwn),
+      makeTrailSplitLayer('nwn', ROUTE_TIERS.nwn),
+      makeTrailSplitLayer('rwn', ROUTE_TIERS.rwn),
+      makeTrailSplitLayer('lwn', ROUTE_TIERS.lwn),
       {
         id: 'trailsplits-hiking-default',
         type: 'line',
@@ -543,9 +531,9 @@ function build() {
         minzoom: TRAILSPLITS_HIKING_MINZOOM,
         filter: ['!', ['has', 'network']],
         paint: {
-          'line-color': '#b2b2b2',
-          'line-opacity': 0.5,
-          'line-width': 1,
+          'line-color': ROUTE_TIER_DEFAULT.color,
+          'line-opacity': ROUTE_TIER_DEFAULT.opacity,
+          'line-width': ROUTE_TIER_DEFAULT.width,
         },
       },
     )
@@ -697,70 +685,38 @@ function build() {
       attribution: ROUTE_USE_LOCAL ? '© OpenStreetMap contributors' : '© TrailSplits',
     }
 
+    function makeRouteLayer(network, tier) {
+      return {
+        id: `outdoor-route-${network}`,
+        type: 'line',
+        source: 'outdoor-route',
+        'source-layer': routeSourceLayer,
+        minzoom: tier.minzoom,
+        filter: ['==', ['get', 'network'], network],
+        paint: {
+          'line-color': tier.color,
+          'line-opacity': tier.opacity,
+          'line-width': tier.width,
+        },
+      }
+    }
+
     style.layers.push(
-      {
-        id: 'outdoor-route-iwn',
-        type: 'line',
-        source: 'outdoor-route',
-        'source-layer': routeSourceLayer,
-        minzoom: 8,
-        filter: ['==', ['get', 'network'], 'iwn'],
-        paint: {
-          'line-color': '#e31a1c',
-          'line-opacity': 0.6,
-          'line-width': 2.5,
-        },
-      },
-      {
-        id: 'outdoor-route-nwn',
-        type: 'line',
-        source: 'outdoor-route',
-        'source-layer': routeSourceLayer,
-        minzoom: 8,
-        filter: ['==', ['get', 'network'], 'nwn'],
-        paint: {
-          'line-color': '#1f78b4',
-          'line-opacity': 0.6,
-          'line-width': 2,
-        },
-      },
-      {
-        id: 'outdoor-route-rwn',
-        type: 'line',
-        source: 'outdoor-route',
-        'source-layer': routeSourceLayer,
-        minzoom: 10,
-        filter: ['==', ['get', 'network'], 'rwn'],
-        paint: {
-          'line-color': '#33a02c',
-          'line-opacity': 0.6,
-          'line-width': 1.5,
-        },
-      },
-      {
-        id: 'outdoor-route-lwn',
-        type: 'line',
-        source: 'outdoor-route',
-        'source-layer': routeSourceLayer,
-        minzoom: 12,
-        filter: ['==', ['get', 'network'], 'lwn'],
-        paint: {
-          'line-color': '#b2b2b2',
-          'line-opacity': 0.5,
-          'line-width': 1,
-        },
-      },
+      makeRouteLayer('iwn', ROUTE_TIERS.iwn),
+      makeRouteLayer('nwn', ROUTE_TIERS.nwn),
+      makeRouteLayer('rwn', ROUTE_TIERS.rwn),
+      makeRouteLayer('lwn', ROUTE_TIERS.lwn),
       {
         id: 'outdoor-route-default',
         type: 'line',
         source: 'outdoor-route',
         'source-layer': routeSourceLayer,
-        minzoom: 12,
+        minzoom: ROUTE_TIER_DEFAULT.minzoom,
         filter: ['!', ['has', 'network']],
         paint: {
-          'line-color': '#b2b2b2',
-          'line-opacity': 0.5,
-          'line-width': 1,
+          'line-color': ROUTE_TIER_DEFAULT.color,
+          'line-opacity': ROUTE_TIER_DEFAULT.opacity,
+          'line-width': ROUTE_TIER_DEFAULT.width,
         },
       },
     )
