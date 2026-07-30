@@ -148,15 +148,22 @@ const POI_SOURCE_MINZOOM = POI_USE_LOCAL ? 12 : 12
 const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 18 : 14
 
 // ── Outdoor route tiles ──────────────────────────────────────────────────
-// Vector tiles with hiking route relations (type=route, route=hiking)
-// from OSM. Self-hosted Planetiler tiles with line geometry.
+// Vector tiles with hiking route relations from OSM — line geometry
+// with network classification (iwn/nwn/rwn/lwn), ref, name, etc.
 // Source-layer: 'outdoor_routes'.
 //
-// Only local hosting — no remote route API available yet.
-const OUTDOOR_ROUTE = true          // Hiking route overlay (self-hosted Planetiler tiles)
+// Switched via ROUTE_USE_LOCAL toggle:
+//   true  → self-hosted Planetiler tiles (z8–14, wider zoom range)
+//   false → TrailSplits API (free, no key — z8–12)
+const OUTDOOR_ROUTE = true          // Hiking route overlay (vector tiles)
+const ROUTE_USE_LOCAL = true        // true = self-hosted Planetiler tiles, false = TrailSplits API
 const ROUTE_LOCAL_URL = 'http://localhost:11002/routes/{z}/{x}/{y}.pbf'
+const ROUTE_REMOTE_URL = 'https://api.trailsplits.com/tiles/v1/hiking-network/current/{z}/{x}/{y}.pbf'
+
+const ROUTE_TILE_URL = ROUTE_USE_LOCAL ? ROUTE_LOCAL_URL : ROUTE_REMOTE_URL
+
 const ROUTE_SOURCE_MINZOOM = 8
-const ROUTE_SOURCE_MAXZOOM = 14  // Java profile emits z8–14 (see HikingRouteOverlay.java)
+const ROUTE_SOURCE_MAXZOOM = ROUTE_USE_LOCAL ? 14 : 12
 
 // ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
 // Outdoor-relevant POI classes from the OpenMapTiles `poi` source-layer
@@ -674,18 +681,20 @@ function build() {
   // ═══════════════════════════════════════════════════════════════════════
   // Vector tiles with hiking route relations from OSM — line geometry
   // with network classification (iwn/nwn/rwn/lwn), ref, name, etc.
-  // Source-layer: 'outdoor_routes'.
   //
-  // Colours and widths match the TrailSplits hiking network scheme
-  // for visual consistency within the style.
+  // Switched via OUTDOOR_ROUTE toggle. Source controlled by ROUTE_USE_LOCAL:
+  //   true  → self-hosted Planetiler tiles (z8–14, source-layer: outdoor_routes)
+  //   false → TrailSplits API (z8–12, source-layer: hiking_network)
 
   if (OUTDOOR_ROUTE) {
+    const routeSourceLayer = ROUTE_USE_LOCAL ? 'outdoor_routes' : 'hiking_network'
+
     style.sources['outdoor-route'] = {
       type: 'vector',
-      tiles: [ROUTE_LOCAL_URL],
+      tiles: [ROUTE_TILE_URL],
       minzoom: ROUTE_SOURCE_MINZOOM,
       maxzoom: ROUTE_SOURCE_MAXZOOM,
-      attribution: '© OpenStreetMap contributors',
+      attribution: ROUTE_USE_LOCAL ? '© OpenStreetMap contributors' : '© TrailSplits',
     }
 
     style.layers.push(
@@ -693,7 +702,7 @@ function build() {
         id: 'outdoor-route-iwn',
         type: 'line',
         source: 'outdoor-route',
-        'source-layer': 'outdoor_routes',
+        'source-layer': routeSourceLayer,
         minzoom: 8,
         filter: ['==', ['get', 'network'], 'iwn'],
         paint: {
@@ -706,7 +715,7 @@ function build() {
         id: 'outdoor-route-nwn',
         type: 'line',
         source: 'outdoor-route',
-        'source-layer': 'outdoor_routes',
+        'source-layer': routeSourceLayer,
         minzoom: 8,
         filter: ['==', ['get', 'network'], 'nwn'],
         paint: {
@@ -719,7 +728,7 @@ function build() {
         id: 'outdoor-route-rwn',
         type: 'line',
         source: 'outdoor-route',
-        'source-layer': 'outdoor_routes',
+        'source-layer': routeSourceLayer,
         minzoom: 10,
         filter: ['==', ['get', 'network'], 'rwn'],
         paint: {
@@ -732,7 +741,7 @@ function build() {
         id: 'outdoor-route-lwn',
         type: 'line',
         source: 'outdoor-route',
-        'source-layer': 'outdoor_routes',
+        'source-layer': routeSourceLayer,
         minzoom: 12,
         filter: ['==', ['get', 'network'], 'lwn'],
         paint: {
@@ -745,7 +754,7 @@ function build() {
         id: 'outdoor-route-default',
         type: 'line',
         source: 'outdoor-route',
-        'source-layer': 'outdoor_routes',
+        'source-layer': routeSourceLayer,
         minzoom: 12,
         filter: ['!', ['has', 'network']],
         paint: {
