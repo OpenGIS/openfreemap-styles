@@ -221,23 +221,51 @@ const COLOURS = {
   CONTOUR_LABEL: '#4a4a4a',
   CONTOUR_HALO: 'rgba(255, 255, 255, 0.85)',
 
-  // Hiking route network tiers (shared by local & TrailSplits routes)
-  ROUTE_IWN: '#e31a1c',
-  ROUTE_NWN: '#1f78b4',
-  ROUTE_RWN: '#33a02c',
-  ROUTE_LWN: '#b2b2b2',
+  // Hiking route network tiers (Waymarked Trails colour scheme)
+  ROUTE_IWN: '#b20303',
+  ROUTE_NWN: '#152eec',
+  ROUTE_RWN: '#ffa304',
+  ROUTE_RWN_CASING: '#a76f0f',
+  ROUTE_LWN: '#7d31c6',
+  ROUTE_LWN_HALO: '#c19ae6',
   ROUTE_DEFAULT: '#b2b2b2',
 }
 
 // ── Route network tier paint configs ──────────────────────────────────
-// Shared by both outdoord-route-* and trailsplits-hiking-* sections.
+// Shared by both outdoor-route-* and trailsplits-hiking-* sections.
 // Each tier has colour, opacity, width, and minzoom.
+//
+// Colours and line styles matching the Waymarked Trails hiking rendering:
+// https://github.com/waymarkedtrails/waymarked-trails-site/blob/master/maps/styles/inc/route_styles.inc
+
+// Core line config per network tier — matching Waymarked Trails colours, opacities,
+// and zoom-dependent widths. Networks with a casing/halo get an additional layer
+// rendered behind the core line.
 
 const ROUTE_TIERS = {
-  iwn: { color: COLOURS.ROUTE_IWN, opacity: 0.6, width: 2.5, minzoom: 8 },
-  nwn: { color: COLOURS.ROUTE_NWN, opacity: 0.6, width: 2.0, minzoom: 8 },
-  rwn: { color: COLOURS.ROUTE_RWN, opacity: 0.6, width: 1.5, minzoom: 10 },
-  lwn: { color: COLOURS.ROUTE_LWN, opacity: 0.5, width: 1.0, minzoom: 12 },
+  iwn: {
+    color: COLOURS.ROUTE_IWN, opacity: 0.7, minzoom: 8,
+    width: ['interpolate', ['linear'], ['zoom'], 8, 3, 10, 4, 12, 5],
+  },
+  nwn: {
+    color: COLOURS.ROUTE_NWN, opacity: 0.7, minzoom: 8,
+    width: ['interpolate', ['linear'], ['zoom'], 8, 2, 10, 3, 12, 4],
+  },
+  rwn: {
+    color: COLOURS.ROUTE_RWN, opacity: 0.8, minzoom: 10,
+    width: ['interpolate', ['linear'], ['zoom'], 10, 2, 12, 3],
+    casing: {
+      color: COLOURS.ROUTE_RWN_CASING, opacity: 0.35,
+      width: ['interpolate', ['linear'], ['zoom'], 10, 5, 12, 7],
+    },
+  },
+  lwn: {
+    color: COLOURS.ROUTE_LWN, opacity: 0.8, minzoom: 12,
+    width: 1.5,
+    halo: {
+      color: COLOURS.ROUTE_LWN_HALO, opacity: 0.4, width: 4, minzoom: 12,
+    },
+  },
 }
 
 const ROUTE_TIER_DEFAULT = { color: COLOURS.ROUTE_DEFAULT, opacity: 0.5, width: 1.0, minzoom: 12 }
@@ -502,13 +530,13 @@ function build() {
       attribution: '© TrailSplits',
     }
 
-    function makeTrailSplitLayer(network, tier) {
+    function makeTSLayer(network, tier) {
       return {
         id: `trailsplits-hiking-${network}`,
         type: 'line',
         source: 'trailsplits-hiking',
         'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
+        minzoom: Math.max(TRAILSPLITS_HIKING_MINZOOM, tier.minzoom || 0),
         filter: ['==', ['get', 'network'], network],
         paint: {
           'line-color': tier.color,
@@ -518,25 +546,47 @@ function build() {
       }
     }
 
-    style.layers.push(
-      makeTrailSplitLayer('iwn', ROUTE_TIERS.iwn),
-      makeTrailSplitLayer('nwn', ROUTE_TIERS.nwn),
-      makeTrailSplitLayer('rwn', ROUTE_TIERS.rwn),
-      makeTrailSplitLayer('lwn', ROUTE_TIERS.lwn),
-      {
-        id: 'trailsplits-hiking-default',
+    function makeTSCasing(network, tier) {
+      if (!tier.casing && !tier.halo) return null
+      const bg = tier.casing || tier.halo
+      return {
+        id: `trailsplits-hiking-${network}-${tier.casing ? 'casing' : 'halo'}`,
         type: 'line',
         source: 'trailsplits-hiking',
         'source-layer': 'hiking_network',
-        minzoom: TRAILSPLITS_HIKING_MINZOOM,
-        filter: ['!', ['has', 'network']],
+        minzoom: Math.max(TRAILSPLITS_HIKING_MINZOOM, bg.minzoom || tier.minzoom || 0),
+        filter: ['==', ['get', 'network'], network],
         paint: {
-          'line-color': ROUTE_TIER_DEFAULT.color,
-          'line-opacity': ROUTE_TIER_DEFAULT.opacity,
-          'line-width': ROUTE_TIER_DEFAULT.width,
+          'line-color': bg.color,
+          'line-opacity': bg.opacity,
+          'line-width': bg.width,
         },
+      }
+    }
+
+    const tsLayers = []
+
+    for (const [network, tier] of Object.entries(ROUTE_TIERS)) {
+      const casing = makeTSCasing(network, tier)
+      if (casing) tsLayers.push(casing)
+      tsLayers.push(makeTSLayer(network, tier))
+    }
+
+    tsLayers.push({
+      id: 'trailsplits-hiking-default',
+      type: 'line',
+      source: 'trailsplits-hiking',
+      'source-layer': 'hiking_network',
+      minzoom: TRAILSPLITS_HIKING_MINZOOM,
+      filter: ['!', ['has', 'network']],
+      paint: {
+        'line-color': ROUTE_TIER_DEFAULT.color,
+        'line-opacity': ROUTE_TIER_DEFAULT.opacity,
+        'line-width': ROUTE_TIER_DEFAULT.width,
       },
-    )
+    })
+
+    style.layers.push(...tsLayers)
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -685,6 +735,7 @@ function build() {
       attribution: ROUTE_USE_LOCAL ? '© OpenStreetMap contributors' : '© TrailSplits',
     }
 
+    // Helper: create a core line layer for a network tier
     function makeRouteLayer(network, tier) {
       return {
         id: `outdoor-route-${network}`,
@@ -701,25 +752,48 @@ function build() {
       }
     }
 
-    style.layers.push(
-      makeRouteLayer('iwn', ROUTE_TIERS.iwn),
-      makeRouteLayer('nwn', ROUTE_TIERS.nwn),
-      makeRouteLayer('rwn', ROUTE_TIERS.rwn),
-      makeRouteLayer('lwn', ROUTE_TIERS.lwn),
-      {
-        id: 'outdoor-route-default',
+    // Helper: create a casing/halo background layer for a network tier
+    function makeRouteCasing(network, tier) {
+      if (!tier.casing && !tier.halo) return null
+      const bg = tier.casing || tier.halo
+      return {
+        id: `outdoor-route-${network}-${tier.casing ? 'casing' : 'halo'}`,
         type: 'line',
         source: 'outdoor-route',
         'source-layer': routeSourceLayer,
-        minzoom: ROUTE_TIER_DEFAULT.minzoom,
-        filter: ['!', ['has', 'network']],
+        minzoom: bg.minzoom || tier.minzoom,
+        filter: ['==', ['get', 'network'], network],
         paint: {
-          'line-color': ROUTE_TIER_DEFAULT.color,
-          'line-opacity': ROUTE_TIER_DEFAULT.opacity,
-          'line-width': ROUTE_TIER_DEFAULT.width,
+          'line-color': bg.color,
+          'line-opacity': bg.opacity,
+          'line-width': bg.width,
         },
+      }
+    }
+
+    const routeLayers = []
+
+    for (const [network, tier] of Object.entries(ROUTE_TIERS)) {
+      const casing = makeRouteCasing(network, tier)
+      if (casing) routeLayers.push(casing)
+      routeLayers.push(makeRouteLayer(network, tier))
+    }
+
+    routeLayers.push({
+      id: 'outdoor-route-default',
+      type: 'line',
+      source: 'outdoor-route',
+      'source-layer': routeSourceLayer,
+      minzoom: ROUTE_TIER_DEFAULT.minzoom,
+      filter: ['!', ['has', 'network']],
+      paint: {
+        'line-color': ROUTE_TIER_DEFAULT.color,
+        'line-opacity': ROUTE_TIER_DEFAULT.opacity,
+        'line-width': ROUTE_TIER_DEFAULT.width,
       },
-    )
+    })
+
+    style.layers.push(...routeLayers)
   }
 
   // ═══════════════════════════════════════════════════════════════════════
