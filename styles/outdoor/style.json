@@ -45,7 +45,7 @@
         "http://localhost:11002/routes/{z}/{x}/{y}.pbf"
       ],
       "minzoom": 8,
-      "maxzoom": 9,
+      "maxzoom": 14,
       "attribution": "© OpenStreetMap contributors"
     }
   },

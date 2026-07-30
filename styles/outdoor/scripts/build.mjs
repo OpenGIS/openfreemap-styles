@@ -156,7 +156,7 @@ const POI_SOURCE_MAXZOOM = POI_USE_LOCAL ? 18 : 14
 const OUTDOOR_ROUTE = true          // Hiking route overlay (self-hosted Planetiler tiles)
 const ROUTE_LOCAL_URL = 'http://localhost:11002/routes/{z}/{x}/{y}.pbf'
 const ROUTE_SOURCE_MINZOOM = 8
-const ROUTE_SOURCE_MAXZOOM = 9   // Planetiler only emits line features at z8–9 in custom schema mode
+const ROUTE_SOURCE_MAXZOOM = 14  // Java profile emits z8–14 (see HikingRouteOverlay.java)
 
 // ── Promoted liberty POIs — display selected base-map POIs at lower zooms ──
 // Outdoor-relevant POI classes from the OpenMapTiles `poi` source-layer

@@ -39,7 +39,8 @@ function notFound(res, msg = 'Not found') {
 
 /**
  * Discover feature directories — subdirectories of ROOT that contain
- * a schema.yml file (excluding dotfiles, node_modules, data, scripts).
+ * either a schema.yml or outdoor_<name>.pmtiles file (excluding
+ * dotfiles, node_modules, data, scripts).
  */
 function discoverFeatures() {
   const entries = readdirSync(ROOT, { withFileTypes: true })
@@ -52,7 +53,10 @@ function discoverFeatures() {
       e.name !== 'scripts'
     )
     .map(e => e.name)
-    .filter(name => existsSync(join(ROOT, name, 'schema.yml')))
+    .filter(name =>
+      existsSync(join(ROOT, name, 'schema.yml')) ||
+      existsSync(join(ROOT, name, `outdoor_${name}.pmtiles`))
+    )
 }
 
 /**
